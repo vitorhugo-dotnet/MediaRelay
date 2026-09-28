@@ -1,4 +1,7 @@
 using MediaRelay.Options;
+using MediaRelay.Health;
+using MediaRelay.Uploads;
+using MediaRelay.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,8 +48,18 @@ builder.Services.AddOptions<UploadOptions>()
     .Validate(options => options.SessionTtlMinutes > 0, "Upload session TTL must be greater than zero.")
     .Validate(options => options.PresignedUploadTtlMinutes > 0, "Presigned upload TTL must be greater than zero.")
     .ValidateOnStart();
+builder.Services.AddProblemDetails();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<UploadSessionService>();
+builder.Services.AddSingleton<MediaValidator>();
+builder.Services.AddSingleton<ObjectIdGenerator>();
+builder.Services.AddSingleton<IMediaStorage, MinioMediaStorage>();
+builder.Services.AddSingleton<UploadService>();
 
 var app = builder.Build();
+app.UseExceptionHandler();
+app.MapHealthEndpoints();
+app.MapUploadEndpoints();
 app.Run();
 
 static bool IsAbsoluteHttpUrl(string value) =>

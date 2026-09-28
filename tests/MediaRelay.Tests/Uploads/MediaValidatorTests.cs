@@ -45,4 +45,20 @@ public sealed class MediaValidatorTests
     [InlineData("clip.mp4", "video/mp4", new byte[] { 0, 0, 0, 0x18, 0x62, 0x61, 0x64, 0x21 })]
     public void ValidateRejectsTruncatedOrIncorrectSignatures(string fileName, string contentType, byte[] header) =>
         Assert.Throws<ArgumentException>(() => new MediaValidator().Validate(fileName, contentType, header));
+
+    [Theory]
+    [MemberData(nameof(AllowedPairs))]
+    public void ValidateMetadataAcceptsAllowedPair(string fileName, string contentType, byte[] _)
+    {
+        var media = new MediaValidator().ValidateMetadata(fileName, contentType);
+        Assert.Equal(Path.GetExtension(fileName), media.Extension);
+        Assert.Equal(contentType, media.ContentType);
+    }
+
+    [Theory]
+    [InlineData("photo.png", "image/jpeg")]
+    [InlineData("photo.jpg", "image/png")]
+    [InlineData("archive.zip", "application/zip")]
+    public void ValidateMetadataRejectsUnsupportedOrMismatchedPair(string fileName, string contentType) =>
+        Assert.Throws<ArgumentException>(() => new MediaValidator().ValidateMetadata(fileName, contentType));
 }

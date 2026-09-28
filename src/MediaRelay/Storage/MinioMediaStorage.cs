@@ -14,6 +14,8 @@ public sealed class MinioMediaStorage : IMediaStorage
     private readonly IMinioClient _publicClient;
     private readonly MinioOptions _minioOptions;
     private readonly Uri _mediaBaseUri;
+    private readonly SemaphoreSlim _initializationLock = new(1, 1);
+    private bool _initialized;
 
     public MinioMediaStorage(IOptions<MinioOptions> minioOptions, IOptions<PublicUrlOptions> publicUrlOptions)
     {
@@ -24,6 +26,19 @@ public sealed class MinioMediaStorage : IMediaStorage
     }
 
     public async Task InitializeAsync(CancellationToken ct)
+    {
+        if (_initialized) return;
+        await _initializationLock.WaitAsync(ct);
+        try
+        {
+            if (_initialized) return;
+            await InitializeCoreAsync(ct);
+            _initialized = true;
+        }
+        finally { _initializationLock.Release(); }
+    }
+
+    private async Task InitializeCoreAsync(CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         if (!await _client.BucketExistsAsync(new BucketExistsArgs().WithBucket(_minioOptions.Bucket), ct))
@@ -50,6 +65,7 @@ public sealed class MinioMediaStorage : IMediaStorage
 
     public async Task<PresignedUpload> CreateBrowserUploadAsync(string objectId, string contentType, long maxSize, TimeSpan ttl, CancellationToken ct)
     {
+        await InitializeAsync(ct);
         ArgumentException.ThrowIfNullOrWhiteSpace(objectId);
         ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxSize);
@@ -70,6 +86,7 @@ public sealed class MinioMediaStorage : IMediaStorage
 
     public async Task UploadAsync(string objectId, Stream content, string contentType, CancellationToken ct)
     {
+        await InitializeAsync(ct);
         ArgumentException.ThrowIfNullOrWhiteSpace(objectId);
         ArgumentNullException.ThrowIfNull(content);
         ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
@@ -86,6 +103,7 @@ public sealed class MinioMediaStorage : IMediaStorage
 
     public async Task<StoredObjectInfo?> StatAsync(string objectId, CancellationToken ct)
     {
+        await InitializeAsync(ct);
         ArgumentException.ThrowIfNullOrWhiteSpace(objectId);
         try
         {

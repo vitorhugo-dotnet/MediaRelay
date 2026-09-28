@@ -60,6 +60,15 @@ public sealed class UploadSessionService(IMemoryCache cache, IOptions<UploadOpti
             ? Applied(session with { State = UploadSessionState.Preparing })
             : Failed(session, "Preparation has already been claimed or completed."));
 
+    public Task<UploadTransitionResult> RecordPreparedAsync(string token, string objectId, ValidatedMedia media, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(objectId);
+        ArgumentNullException.ThrowIfNull(media);
+        return TransitionAsync(token, ct, session => session.State == UploadSessionState.Preparing && session.ObjectId is null
+            ? Applied(session with { ObjectId = objectId, Media = media })
+            : Failed(session, "Preparation is not available."));
+    }
+
     public Task<UploadTransitionResult> RecordVerifiedCompletionAsync(
         string token, string objectId, ValidatedMedia media, CancellationToken ct)
     {

@@ -14,6 +14,17 @@ public sealed class MediaValidator
 
     public ValidatedMedia Validate(string fileName, string declaredContentType, ReadOnlySpan<byte> header)
     {
+        var media = ValidateMetadata(fileName, declaredContentType);
+        if (!HasValidSignature(media.Extension, header))
+        {
+            throw new ArgumentException("File signature does not match the declared media type.", nameof(header));
+        }
+
+        return media;
+    }
+
+    public ValidatedMedia ValidateMetadata(string fileName, string declaredContentType)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
         ArgumentException.ThrowIfNullOrWhiteSpace(declaredContentType);
 
@@ -22,11 +33,6 @@ public sealed class MediaValidator
             !string.Equals(expectedContentType, declaredContentType, StringComparison.OrdinalIgnoreCase))
         {
             throw new ArgumentException("File extension and content type must be an allowed media pair.");
-        }
-
-        if (!HasValidSignature(extension, header))
-        {
-            throw new ArgumentException("File signature does not match the declared media type.", nameof(header));
         }
 
         return new ValidatedMedia(extension, expectedContentType);
