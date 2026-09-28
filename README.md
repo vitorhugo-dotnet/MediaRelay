@@ -45,3 +45,9 @@ The deployment workflow uses the protected GitHub Actions environment named `pro
 Create `.env` in that directory before deploying. It must include `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `PUBLIC_APP_BASE_URL`, `PUBLIC_MEDIA_BASE_URL`, `MINIO_PUBLIC_ENDPOINT`, and `UPLOAD_API_KEY`; also set `DISCORD_TOKEN` and `DISCORD_APPLICATION_ID` when `DISCORD_ENABLED` is not `false`. Set `IMAGE` to `ghcr.io/vitorhugo-dotnet/media-relay:sha-<40-character-commit-sha>` for manual deployments. The `deploy/deploy.sh` script checks the immutable image reference and required values before pulling or restarting services; it does not print secret values.
 
 The Compose file exposes only loopback ports for the app and MinIO API, keeps the console unbound, and stores MinIO data in a named volume. Back up that volume using your VPS's normal storage backup process.
+
+GitHub Actions runs the .NET restore/build/test checks and a Docker build for pull requests without GHCR login or production secrets. A successful push to `main` publishes `ghcr.io/vitorhugo-dotnet/media-relay:sha-<commit-sha>` and `:latest`, then deploys the SHA-tagged image through the protected `production` environment. The workflow transfers only `deploy/docker-compose.prod.yml` and `deploy/deploy.sh`; keep the production `.env` on the VPS.
+
+Set the GHCR package visibility to **Public** so the VPS can pull images without a registry credential. The deployment script intentionally uses the VPS's existing Docker login state and does not transfer a registry token.
+
+To redeploy an existing image, use **Actions → MediaRelay CI/CD → Run workflow**, enable `deploy`, and provide its immutable `sha-<40-character-commit-sha>` tag in `image_tag`. Manual deployment does not build or publish an image. Pull requests never receive the GHCR publishing token or VPS secrets.
