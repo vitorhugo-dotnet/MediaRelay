@@ -62,6 +62,8 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      - name: Build pinned MinIO Community test image
+        run: docker build --file deploy/minio-community.Dockerfile --tag media-relay-minio:community-9e49d5e .
       - name: Run tests
         run: dotnet test MediaRelay.sln --configuration Release --logger "trx;LogFileName=MediaRelay.trx" --results-directory TestResults
       - name: Upload test results
@@ -172,7 +174,7 @@ jobs:
           remote_path_b64="$(printf '%s' "$VPS_DEPLOY_PATH" | base64 -w 0)"
           remote="$(printf '%s' "$VPS_USER")@$(printf '%s' "$VPS_HOST")"
           ssh "$remote" "path=\$(printf '%s' '$remote_path_b64' | base64 -d); mkdir -p \"\$path/deploy\""
-          tar -C deploy -czf - docker-compose.prod.yml deploy.sh | ssh "$remote" "path=\$(printf '%s' '$remote_path_b64' | base64 -d); tar -xzf - -C \"\$path/deploy\""
+          tar -C deploy -czf - docker-compose.prod.yml deploy.sh minio-community.Dockerfile | ssh "$remote" "path=\$(printf '%s' '$remote_path_b64' | base64 -d); tar -xzf - -C \"\$path/deploy\""
           ssh "$remote" "path=\$(printf '%s' '$remote_path_b64' | base64 -d); chmod 700 \"\$path/deploy/deploy.sh\""
       - name: Restart services with the selected immutable image
         shell: bash

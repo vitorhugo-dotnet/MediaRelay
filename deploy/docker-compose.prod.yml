@@ -34,7 +34,10 @@ services:
       start_period: 30s
 
   minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: media-relay-minio:community-9e49d5e
+    build:
+      context: ..
+      dockerfile: deploy/minio-community.Dockerfile
     command: ["server", "/data", "--console-address", ":9001"]
     restart: unless-stopped
     environment:

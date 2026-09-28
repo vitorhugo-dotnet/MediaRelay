@@ -17,7 +17,9 @@ public sealed class DeployScriptTests
             Assert.All(File.ReadAllLines(fixture.DockerLog), call => Assert.StartsWith("compose ", call, StringComparison.Ordinal));
             Assert.Contains("sha-" + new string('a', 40), result.StandardOutput, StringComparison.Ordinal);
             Assert.DoesNotContain(uploadKey, result.StandardOutput + result.StandardError, StringComparison.Ordinal);
-            Assert.Equal(3, File.ReadAllLines(fixture.DockerLog).Length);
+            var dockerCalls = File.ReadAllLines(fixture.DockerLog);
+            Assert.Contains(dockerCalls, call => call.EndsWith(" build minio", StringComparison.Ordinal));
+            Assert.Equal(4, dockerCalls.Length);
         }
         finally
         {
@@ -36,7 +38,7 @@ public sealed class DeployScriptTests
 
             Assert.Equal(0, result.ExitCode);
             Assert.Contains(image, result.StandardOutput, StringComparison.Ordinal);
-            Assert.Equal(3, File.ReadAllLines(fixture.DockerLog).Length);
+            Assert.Equal(4, File.ReadAllLines(fixture.DockerLog).Length);
         }
         finally
         {

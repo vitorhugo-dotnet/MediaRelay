@@ -62,5 +62,6 @@ done
 cd "$project_dir"
 docker compose --env-file "$env_file" -f "$compose_file" config --quiet
 docker compose --env-file "$env_file" -f "$compose_file" pull app
+docker compose --env-file "$env_file" -f "$compose_file" build minio
 docker compose --env-file "$env_file" -f "$compose_file" up -d --remove-orphans
 printf 'MediaRelay deployment is running with %s.\n' "$IMAGE"

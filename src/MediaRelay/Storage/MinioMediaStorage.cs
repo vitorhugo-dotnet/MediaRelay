@@ -81,7 +81,11 @@ public sealed class MinioMediaStorage : IMediaStorage
 
         var (url, fields) = await _publicClient.PresignedPostPolicyAsync(policy);
         ct.ThrowIfCancellationRequested();
-        return new PresignedUpload(url.AbsoluteUri, new Dictionary<string, string>(fields, StringComparer.OrdinalIgnoreCase));
+        var uploadFields = new Dictionary<string, string>(fields, StringComparer.OrdinalIgnoreCase)
+        {
+            ["Content-Type"] = contentType
+        };
+        return new PresignedUpload(url.AbsoluteUri, uploadFields);
     }
 
     public async Task UploadAsync(string objectId, Stream content, string contentType, CancellationToken ct)

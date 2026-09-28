@@ -14,7 +14,7 @@ public sealed class MinioMediaStorageTests : IAsyncLifetime
 {
     private const string AccessKey = "media-relay-test";
     private const string SecretKey = "media-relay-test-secret";
-    private readonly IContainer _container = new ContainerBuilder("minio/minio:RELEASE.2025-02-07T23-21-09Z")
+    private readonly IContainer _container = new ContainerBuilder("media-relay-minio:community-9e49d5e")
         .WithEnvironment("MINIO_ROOT_USER", AccessKey)
         .WithEnvironment("MINIO_ROOT_PASSWORD", SecretKey)
         .WithCommand("server", "/data")
@@ -71,7 +71,8 @@ public sealed class MinioMediaStorageTests : IAsyncLifetime
         var fields = upload.Fields;
         Assert.NotEmpty(upload.Url);
         Assert.Equal("opaque-id.png", fields["key"]);
-        Assert.Equal("image/png", fields["Content-Type"]);
+        Assert.True(fields.TryGetValue("Content-Type", out var returnedContentType), $"returned fields: {string.Join(", ", fields.Keys)}");
+        Assert.Equal("image/png", returnedContentType);
         Assert.Contains("policy", fields.Keys);
         var policyJson = Encoding.UTF8.GetString(Convert.FromBase64String(fields["policy"]));
         using var policy = JsonDocument.Parse(policyJson);
@@ -84,6 +85,18 @@ public sealed class MinioMediaStorageTests : IAsyncLifetime
         Assert.Contains(conditions.EnumerateArray(), condition => condition.ValueKind == JsonValueKind.Array && condition[0].GetString() == "eq" && condition[1].GetString() == "$Content-Type" && condition[2].GetString() == "image/png");
         Assert.DoesNotContain("SecretKey", string.Join(" ", fields.Keys), StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(SecretKey, string.Join(" ", fields.Values));
+
+        using var form = new MultipartFormDataContent();
+        foreach (var field in fields)
+            form.Add(new StringContent(field.Value), field.Key);
+        using var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes("small browser upload"));
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+        form.Add(fileContent, "file", "opaque-id.png");
+        using var response = await new HttpClient().PostAsync(upload.Url, form);
+        Assert.Equal(System.Net.HttpStatusCode.NoContent, response.StatusCode);
+        var uploaded = await _storage.StatAsync("opaque-id.png", CancellationToken.None);
+        Assert.NotNull(uploaded);
+        Assert.Equal("image/png", uploaded.ContentType);
     }
 
     [Fact]

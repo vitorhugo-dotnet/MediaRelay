@@ -37,6 +37,8 @@ public sealed class ComposeConfigurationTests
         var minio = services.GetProperty("minio");
         var app = services.GetProperty("app");
 
+        Assert.Equal("media-relay-minio:community-9e49d5e", minio.GetProperty("image").GetString());
+        Assert.Equal("deploy/minio-community.Dockerfile", minio.GetProperty("build").GetProperty("dockerfile").GetString());
         Assert.Contains(minio.GetProperty("volumes").EnumerateArray(), mount =>
             mount.GetProperty("type").GetString() == "volume" && mount.GetProperty("source").GetString() == "minio-data");
         Assert.DoesNotContain(minio.GetProperty("ports").EnumerateArray(), port =>

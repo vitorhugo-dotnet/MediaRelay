@@ -6,6 +6,8 @@ MediaRelay is a self-hosted ASP.NET Core media uploader. It accepts browser uplo
 
 Requirements: .NET 10 SDK, Docker Engine, and Docker Compose.
 
+MediaRelay builds its MinIO Community image locally from the pinned upstream source commit `9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a` (release `RELEASE.2025-10-15T17-29-55Z`). Community is distributed as source; the Compose deployment and CI test job compile this source into `media-relay-minio:community-9e49d5e`. The MinIO repository is archived, so this image does not receive upstream Community security updates. Review and update the pinned source deliberately if you maintain this deployment.
+
 ```sh
 cp .env.example .env
 # Replace the example credentials in .env before starting the stack.
@@ -26,6 +28,8 @@ Copy `.env.example` and replace every placeholder with a unique value. Keep `.en
 `DISCORD_ENABLED` defaults to `true`. Set it to `false` to run without Discord credentials. When enabled, configure `DISCORD_TOKEN` and `DISCORD_APPLICATION_ID`; `DISCORD_ALLOWED_GUILD_IDS` can optionally restrict accepted guilds. If left empty, the bot accepts `/upload` from any guild where the command is available. The Discord bot needs the `bot` and `applications.commands` OAuth scopes and permission to view channels, send messages, and read message history. On uncertain publication retries, MediaRelay checks the latest 50 messages in the source channel for an already-sent URL; read history is required for this duplicate reconciliation.
 
 The Compose configuration sets MinIO's global `MINIO_API_CORS_ALLOW_ORIGIN` to `PUBLIC_APP_BASE_URL`, allowing the browser uploader origin. MinIO exposes this global origin control; it does not provide the per-bucket method and header restriction described by an ideal least-privilege CORS policy. The bucket policy remains limited to anonymous `GetObject` access.
+
+To run the storage integration tests locally, build the same pinned image first: `docker build -f deploy/minio-community.Dockerfile -t media-relay-minio:community-9e49d5e .`, then run `dotnet test tests/MediaRelay.Tests/MediaRelay.Tests.csproj --filter FullyQualifiedName~MinioMediaStorageTests`. The tests use Docker to start the local image.
 
 ## ShareX
 
@@ -49,7 +53,7 @@ Create `.env` in that directory before deploying. It must include `MINIO_ROOT_US
 
 The Compose file exposes only loopback ports for the app and MinIO API, keeps the console unbound, and stores MinIO data in a named volume. Back up that volume using your VPS's normal storage backup process.
 
-GitHub Actions runs the .NET restore/build/test checks and a Docker build for pull requests without GHCR login or production secrets. A successful push to `main` publishes `ghcr.io/vitorhugo-dotnet/media-relay:sha-<commit-sha>` and `:latest`, then deploys the SHA-tagged image through the protected `production` environment. The workflow transfers only `deploy/docker-compose.prod.yml` and `deploy/deploy.sh`; keep the production `.env` on the VPS.
+GitHub Actions runs the .NET restore/build/test checks and a Docker build for pull requests without GHCR login or production secrets. A successful push to `main` publishes `ghcr.io/vitorhugo-dotnet/media-relay:sha-<commit-sha>` and `:latest`, then deploys the SHA-tagged image through the protected `production` environment. The workflow transfers `deploy/docker-compose.prod.yml`, `deploy/deploy.sh`, and `deploy/minio-community.Dockerfile`; the VPS builds the pinned MinIO source image during deployment. Keep the production `.env` on the VPS.
 
 Set the GHCR package visibility to **Public** so the VPS can pull images without a registry credential. The deployment script intentionally uses the VPS's existing Docker login state and does not transfer a registry token.
 
