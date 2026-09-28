@@ -198,12 +198,12 @@
 **Interfaces:**
 - Produces `GET /u/{token}` and serves only static application assets; the browser calls the prepare/complete APIs and uploads media bytes directly to the presigned MinIO URL.
 
-- [ ] Test page routing, expired/invalid sessions, static asset availability, and no secret values embedded in HTML/JavaScript.
-- [ ] Implement file picker, drag/drop, supported format/size precheck, visible upload progress, human-readable API errors, successful public URL display/copy, and mobile-friendly plain HTML/CSS/JavaScript.
-- [ ] Use the exact signed headers/fields returned by prepare; complete only after MinIO upload succeeds. Do not send file bytes to ASP.NET Core.
-- [ ] Configure storage CORS to only accept configured `PUBLIC_APP_BASE_URL` origin and required methods/headers; exercise a local browser-to-MinIO upload in the integration verification.
-- [ ] Run endpoint and browser-to-MinIO verification and confirm file bytes bypass the application container.
-- [ ] Commit as `feat: add browser upload page`.
+- [x] Test page routing, expired/invalid sessions, static asset availability, and no secret values embedded in HTML/JavaScript.
+- [x] Implement file picker, drag/drop, supported format/size precheck, visible upload progress, human-readable API errors, successful public URL display/copy, and mobile-friendly plain HTML/CSS/JavaScript.
+- [x] Use the exact signed headers/fields returned by prepare; complete only after MinIO upload succeeds. Do not send file bytes to ASP.NET Core.
+- [ ] Configure storage CORS to accept the configured `PUBLIC_APP_BASE_URL` origin; MinIO SDK 6.0.3 exposes no bucket CORS API, so Task 9 will set the supported global MinIO origin. Its global setting cannot restrict methods/headers per bucket. Exercise a local browser-to-MinIO upload when Docker is available.
+- [ ] Run endpoint and browser-to-MinIO verification and confirm file bytes bypass the application container. Browser-to-MinIO verification is environment-blocked because Docker Desktop is unavailable.
+- [x] Commit as `feat: add browser upload page`.
 
 ### Task 8: Add authenticated ShareX upload
 
