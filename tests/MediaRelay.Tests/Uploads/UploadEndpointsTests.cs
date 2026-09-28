@@ -22,6 +22,8 @@ public sealed class UploadEndpointsTests
 
         var invalid = await client.PostAsJsonAsync("/api/uploads/prepare", new PrepareUploadRequest("bad", "a.png", "image/png", 10));
         Assert.Equal(HttpStatusCode.Unauthorized, invalid.StatusCode);
+        var missing = await client.PostAsJsonAsync("/api/uploads/prepare", new PrepareUploadRequest("", "a.png", "image/png", 10));
+        Assert.Equal(HttpStatusCode.Unauthorized, missing.StatusCode);
 
         var created = await CreateSession(factory);
         var unsupported = await client.PostAsJsonAsync("/api/uploads/prepare", new PrepareUploadRequest(created.Token, "a.zip", "application/zip", 10));
@@ -49,6 +51,34 @@ public sealed class UploadEndpointsTests
         factory.Storage.FailPrepare = true;
         var failed = await client.PostAsJsonAsync("/api/uploads/prepare", new PrepareUploadRequest(failingSession.Token, "a.png", "image/png", 10));
         Assert.Equal(HttpStatusCode.ServiceUnavailable, failed.StatusCode);
+    }
+
+    [Fact]
+    public async Task PrepareCanRetrySameSessionAfterPresignFailure()
+    {
+        await using var factory = new UploadFactory();
+        using var client = factory.CreateClient();
+        var session = await CreateSession(factory);
+        factory.Storage.FailPrepare = true;
+        var failed = await client.PostAsJsonAsync("/api/uploads/prepare", new PrepareUploadRequest(session.Token, "a.png", "image/png", 10));
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, failed.StatusCode);
+
+        factory.Storage.FailPrepare = false;
+        var retry = await client.PostAsJsonAsync("/api/uploads/prepare", new PrepareUploadRequest(session.Token, "a.png", "image/png", 10));
+        Assert.Equal(HttpStatusCode.OK, retry.StatusCode);
+    }
+
+    [Fact]
+    public async Task PrepareRejectsExpiredSessionThroughRoute()
+    {
+        await using var factory = new UploadFactory();
+        using var client = factory.CreateClient();
+        var session = await CreateSession(factory);
+        factory.Clock.Advance(TimeSpan.FromMinutes(2));
+
+        var response = await client.PostAsJsonAsync("/api/uploads/prepare", new PrepareUploadRequest(session.Token, "a.png", "image/png", 10));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
@@ -87,6 +117,7 @@ public sealed class UploadEndpointsTests
     private sealed class UploadFactory : WebApplicationFactory<Program>
     {
         public FakeMediaStorage Storage { get; } = new();
+        public TestTimeProvider Clock { get; } = new(DateTimeOffset.UtcNow);
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -96,14 +127,22 @@ public sealed class UploadEndpointsTests
                 ["Minio:Endpoint"] = "localhost:9000", ["Minio:PublicEndpoint"] = "localhost:9000",
                 ["Minio:AccessKey"] = "test", ["Minio:SecretKey"] = "test",
                 ["PublicUrls:MediaBaseUrl"] = "https://media.test", ["PublicUrls:AppBaseUrl"] = "https://app.test",
-                ["Upload:ApiKey"] = "test", ["Upload:MaxUploadSize"] = "100"
+                ["Upload:ApiKey"] = "test", ["Upload:MaxUploadSize"] = "100", ["Upload:SessionTtlMinutes"] = "1"
             }));
             builder.ConfigureTestServices(services =>
             {
                 services.RemoveAll<IMediaStorage>();
                 services.AddSingleton<IMediaStorage>(Storage);
+                services.AddSingleton<TimeProvider>(Clock);
             });
         }
+    }
+
+    private sealed class TestTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        private DateTimeOffset _now = now;
+        public override DateTimeOffset GetUtcNow() => _now;
+        public void Advance(TimeSpan amount) => _now += amount;
     }
 
     private sealed class FakeMediaStorage : IMediaStorage

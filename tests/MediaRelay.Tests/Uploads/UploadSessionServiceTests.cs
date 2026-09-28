@@ -64,6 +64,23 @@ public sealed class UploadSessionServiceTests
     }
 
     [Fact]
+    public async Task PreparationClaimCanBeReleasedForRetryOnlyWhilePreparing()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(cache);
+        var created = await service.CreateAsync(1, 2, 3, CancellationToken.None);
+        Assert.True((await service.TryClaimPreparationAsync(created.Token, CancellationToken.None)).Succeeded);
+
+        var released = await service.ReleasePreparationAsync(created.Token, CancellationToken.None);
+
+        Assert.True(released.Succeeded);
+        Assert.Equal(UploadSessionState.Created, released.Session!.State);
+        Assert.True((await service.TryClaimPreparationAsync(created.Token, CancellationToken.None)).Succeeded);
+        await service.RecordPreparedAsync(created.Token, "object-id", new ValidatedMedia(".png", "image/png"), CancellationToken.None);
+        Assert.False((await service.ReleasePreparationAsync(created.Token, CancellationToken.None)).Succeeded);
+    }
+
+    [Fact]
     public async Task PublicationSuccessIsIdempotentAndConflictingCompletionFails()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());

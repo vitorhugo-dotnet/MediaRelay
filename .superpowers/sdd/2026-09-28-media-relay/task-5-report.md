@@ -10,3 +10,15 @@ Validation:
 - `git diff --check`: clean.
 
 Concern: a storage failure after claiming preparation leaves that one-time session in `Preparing`; it cannot be prepared again. A future retry policy would need an explicit safe transition for failed presigning.
+
+## Fix round 1 (2026-09-28)
+
+Changes: Added `ReleasePreparationAsync`, which only changes `Preparing` to `Created` while no authorization metadata has been stored. `PrepareAsync` invokes it only if presign generation throws before returning URL/form fields. Added route coverage for retrying the same token after presign failure and for expired and missing tokens, plus session transition coverage ensuring release is refused after prepared metadata is recorded.
+
+Exact verification:
+
+- `dotnet test tests/MediaRelay.Tests/MediaRelay.Tests.csproj --filter 'FullyQualifiedName~UploadEndpointsTests|FullyQualifiedName~UploadSessionServiceTests' --no-restore`
+  Output: `Passed! - Failed: 0, Passed: 12, Skipped: 0, Total: 12`.
+- `dotnet test MediaRelay.sln --no-restore --verbosity quiet`
+  Output: `Failed! - Failed: 4, Passed: 46, Skipped: 0, Total: 50`. Failures were the four Docker-backed MinIO integration tests: `StatReturnsNullForMissingObject`, `BrowserUploadPolicyBindsExactObjectTypeSizeAndExpiration`, `UploadsAndStatsObjectWithContentTypeAndCanonicalPublicUrl`, and `InitializesBucketWithAnonymousReadOnlyAccess`; Testcontainers could not connect to `npipe://./pipe/docker_engine`.
+- `git diff --check`: clean.

@@ -26,17 +26,21 @@ public sealed class UploadService(
         if (!claim.Succeeded) return UploadOperationResult.Error(claim.IsInProgress ? 409 : 409, "session_unavailable", "The upload session cannot be prepared.");
 
         var objectId = objectIds.Create(media.Extension);
+        PresignedUpload authorization;
         try
         {
-            var authorization = await storage.CreateBrowserUploadAsync(objectId, media.ContentType, options.Value.MaxUploadSize, options.Value.PresignedUploadTtl, ct);
-            var prepared = await sessions.RecordPreparedAsync(request.SessionToken, objectId, media, ct);
-            if (!prepared.Succeeded) return UploadOperationResult.Error(409, "session_unavailable", "The upload session cannot be prepared.");
-            return UploadOperationResult.Success(new PrepareUploadResponse(objectId, authorization.Url, authorization.Fields));
+            authorization = await storage.CreateBrowserUploadAsync(objectId, media.ContentType, options.Value.MaxUploadSize, options.Value.PresignedUploadTtl, ct);
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        catch (Exception)
         {
+            await sessions.ReleasePreparationAsync(request.SessionToken, CancellationToken.None);
+            ct.ThrowIfCancellationRequested();
             return UploadOperationResult.Error(503, "storage_unavailable", "Upload storage is temporarily unavailable.");
         }
+
+        var prepared = await sessions.RecordPreparedAsync(request.SessionToken, objectId, media, ct);
+        if (!prepared.Succeeded) return UploadOperationResult.Error(409, "session_unavailable", "The upload session cannot be prepared.");
+        return UploadOperationResult.Success(new PrepareUploadResponse(objectId, authorization.Url, authorization.Fields));
     }
 
     public async Task<UploadOperationResult> CompleteAsync(string token, CancellationToken ct)
