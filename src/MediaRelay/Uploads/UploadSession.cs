@@ -33,4 +33,5 @@ public sealed record UploadTransitionResult(
     bool Succeeded,
     bool WasAlreadyApplied,
     UploadSession? Session,
-    string? FailureReason = null);
+    string? FailureReason = null,
+    bool IsInProgress = false);

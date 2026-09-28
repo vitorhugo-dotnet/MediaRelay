@@ -88,7 +88,7 @@ public sealed class UploadSessionService(IMemoryCache cache, IOptions<UploadOpti
             if (session.State != UploadSessionState.Completed)
                 return Failed(session, "Verified completion is required before publication.");
             if (session.PublicationStatus == PublicationStatus.Pending)
-                return AlreadyApplied(session);
+                return InProgress(session);
             if (session.PublicationStatus == PublicationStatus.Succeeded)
                 return Failed(session, "Publication has already succeeded.");
             return Applied(session with { PublicationStatus = PublicationStatus.Pending });
@@ -152,6 +152,7 @@ public sealed class UploadSessionService(IMemoryCache cache, IOptions<UploadOpti
 
     private static UploadTransitionResult Applied(UploadSession session) => new(true, false, session);
     private static UploadTransitionResult AlreadyApplied(UploadSession session) => new(true, true, session);
+    private static UploadTransitionResult InProgress(UploadSession session) => new(false, false, session, IsInProgress: true);
     private static UploadTransitionResult Failed(UploadSession session, string reason) => new(false, false, session, reason);
     private static string CacheKey(string hash) => CacheKeyPrefix + hash;
     private static string HashToken(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));

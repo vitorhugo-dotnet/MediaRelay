@@ -101,6 +101,22 @@ public sealed class UploadSessionServiceTests
         Assert.True((await service.MarkPublicationSucceededAsync(created.Token, CancellationToken.None)).Succeeded);
     }
 
+    [Fact]
+    public async Task PublicationPendingCanOnlyBeClaimedByOneConcurrentCaller()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(cache);
+        var created = await service.CreateAsync(1, 2, 3, CancellationToken.None);
+        await service.TryClaimPreparationAsync(created.Token, CancellationToken.None);
+        await service.RecordVerifiedCompletionAsync(created.Token, "object-id", new(".png", "image/png"), CancellationToken.None);
+
+        var claims = await Task.WhenAll(Enumerable.Range(0, 16)
+            .Select(_ => service.MarkPublicationPendingAsync(created.Token, CancellationToken.None)));
+
+        Assert.Single(claims, result => result.Succeeded);
+        Assert.Equal(15, claims.Count(result => result.IsInProgress && !result.Succeeded));
+    }
+
     private static UploadSessionService CreateService(IMemoryCache cache) =>
         new(cache, Microsoft.Extensions.Options.Options.Create(new UploadOptions()));
 
