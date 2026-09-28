@@ -137,15 +137,18 @@
 - Create: `src/MediaRelay/Uploads/UploadService.cs`
 - Create: `src/MediaRelay/Health/HealthEndpoints.cs`
 - Modify: `src/MediaRelay/Program.cs`
+- Modify: `src/MediaRelay/Uploads/MediaValidator.cs`
+- Modify: `tests/MediaRelay.Tests/Uploads/MediaValidatorTests.cs`
 - Test: `tests/MediaRelay.Tests/Uploads/UploadEndpointsTests.cs`
 - Test: `tests/MediaRelay.Tests/Health/HealthEndpointTests.cs`
 
 **Interfaces:**
+- Produces: `ValidatedMedia ValidateMetadata(string fileName, string declaredContentType)` for browser metadata, while existing `Validate(fileName, declaredContentType, header)` keeps signature checks for backend-streamed ShareX data.
 - Produces routes `POST /api/uploads/prepare`, `POST /api/uploads/complete`, and `GET /health`.
 - `POST /api/uploads/prepare` accepts session token, filename, declared MIME, and size; returns a generated object id and presigned authorization.
 - `POST /api/uploads/complete` accepts the upload session token and returns stored URL plus publication state after verifying object metadata.
 
-- [ ] Add API tests for missing/invalid/expired token, unsupported file, oversized size, unavailable MinIO, missing object, metadata mismatch, successful prepare/complete, and duplicate completion.
+- [ ] Add failing `MediaValidatorTests` for metadata-only allowed/mismatched extension and MIME pairs, then API tests for missing/invalid/expired token, unsupported file, oversized size, unavailable MinIO, missing object, metadata mismatch, successful prepare/complete, and duplicate completion.
 - [ ] Add health test asserting `GET /health` returns HTTP 200 and `{"status":"healthy"}` without credentials or internal endpoint details.
 - [ ] Run focused API tests to confirm they fail before route mapping.
 - [ ] Implement prepare/complete using the session, validator, and `IMediaStorage`; enforce one-time state transitions, size ceiling, stored size and Content-Type verification, ProblemDetails errors, and safe logging fields.
@@ -281,6 +284,7 @@
 - Health, structured logging, ProblemDetails, secrets and Docker health: Tasks 1, 5, 6, 8–10.
 - CI tests/build/image labels/tags, PR isolation, manual deployment, SSH to VPS and GH repository metadata: Tasks 9–11.
 - No database/migration path, no alternative storage providers, no frontend build, and no deferred features are added.
+
 
 
 
