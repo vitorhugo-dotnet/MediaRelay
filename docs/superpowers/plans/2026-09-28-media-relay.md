@@ -87,11 +87,11 @@
 **Interfaces:**
 - Produces: `ValidatedMedia Validate(string fileName, string declaredContentType, ReadOnlySpan<byte> header)`; `string ObjectIdGenerator.Create(string extension)`.
 
-- [ ] Add failing tests for every allowed extension/MIME pair, mismatched MIME/extension, unsupported types, common image/MP4 magic bytes, truncated/incorrect signatures, and generated IDs that do not contain original filenames.
-- [ ] Run `dotnet test tests/MediaRelay.Tests --filter FullyQualifiedName~MediaValidatorTests` and confirm the new cases fail before implementation.
-- [ ] Implement validation using an explicit extension-to-MIME map and signature checks for files that pass through the backend; browser completion will also validate stored MIME and size metadata.
-- [ ] Run validator and object ID tests; require all allowed fixtures to pass and all invalid pairs/signatures to be rejected.
-- [ ] Commit as `feat: validate media and generate object ids`.
+- [x] Add failing tests for every allowed extension/MIME pair, mismatched MIME/extension, unsupported types, common image/MP4 magic bytes, truncated/incorrect signatures, and generated IDs that do not contain original filenames.
+- [x] Run `dotnet test tests/MediaRelay.Tests --filter FullyQualifiedName~MediaValidatorTests` and confirm the new cases fail before implementation.
+- [x] Implement validation using an explicit extension-to-MIME map and signature checks for files that pass through the backend; browser completion will also validate stored MIME and size metadata.
+- [x] Run validator and object ID tests; require all allowed fixtures to pass and all invalid pairs/signatures to be rejected.
+- [x] Commit as `feat: validate media and generate object ids`.
 
 ### Task 3: Add upload session lifecycle
 
@@ -281,6 +281,7 @@
 - Health, structured logging, ProblemDetails, secrets and Docker health: Tasks 1, 5, 6, 8–10.
 - CI tests/build/image labels/tags, PR isolation, manual deployment, SSH to VPS and GH repository metadata: Tasks 9–11.
 - No database/migration path, no alternative storage providers, no frontend build, and no deferred features are added.
+
 
 
 
