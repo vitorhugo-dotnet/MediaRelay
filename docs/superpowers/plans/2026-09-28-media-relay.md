@@ -247,12 +247,12 @@
 **Interfaces:**
 - Pull requests validate solution, tests, and Docker build with read-only repository permissions and no deploy/publish secrets.
 - `main` publishes `ghcr.io/vitorhugo-dotnet/media-relay:sha-<commit>` and `:latest`, then deploys that exact SHA image through the protected `production` environment.
-- Manual dispatch supports validation/image publication and a deployment selector that can deploy an already-published image without rebuilding.
+- Manual dispatch accepts a deploy boolean and an image tag. When deploy is true, require an immutable `sha-<commit>` tag under `ghcr.io/vitorhugo-dotnet/media-relay`; deploy that existing image without rebuilding or republishing it.
 
 - [ ] Add workflow triggers for `main`, pull requests, and `workflow_dispatch`; separate build, test, publish, and deploy jobs with explicit minimal permissions and concurrency control.
 - [ ] Build job resolves `MediaRelay.sln`, installs .NET 10, restores and builds Release; test job runs all test projects and uploads TRX artifacts even when tests fail.
 - [ ] Pull request Docker build must not log into GHCR or deploy. Main publication logs into GHCR using `GITHUB_TOKEN`, attaches source/revision OCI labels, caches layers, and pushes SHA plus `latest` tags.
-- [ ] Deploy job requires successful image publication on `main` or an explicit manual deployment; use protected `production` environment, SSH secrets, and clear preflight errors; transfer only Compose/deploy files and restart the SHA-tagged image.
+- [ ] Deploy job requires successful image publication on `main` or an explicit manual deployment with an immutable SHA image input; use protected `production` environment, SSH secrets, and clear preflight errors; transfer only Compose/deploy files and restart that exact image.
 - [ ] Follow the job boundaries and GHCR/SSH delivery pattern in `vitorhugo-dotnet/dotnet_RelayControl`; omit EF/migration actions because the spec has no database.
 - [ ] Validate workflow syntax and behavior with a PR-style run; verify it cannot publish/deploy on PR and that missing secrets fail before SSH.
 - [ ] Commit as `ci: build publish and deploy MediaRelay`.
@@ -281,3 +281,4 @@
 - Health, structured logging, ProblemDetails, secrets and Docker health: Tasks 1, 5, 6, 8–10.
 - CI tests/build/image labels/tags, PR isolation, manual deployment, SSH to VPS and GH repository metadata: Tasks 9–11.
 - No database/migration path, no alternative storage providers, no frontend build, and no deferred features are added.
+
