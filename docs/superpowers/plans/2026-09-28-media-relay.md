@@ -123,12 +123,12 @@
 - Produces: `Task<PresignedUpload> CreateBrowserUploadAsync(string objectId, string contentType, long maxSize, TimeSpan ttl, CancellationToken ct)`; `Task UploadAsync(string objectId, Stream content, string contentType, CancellationToken ct)`; `Task<StoredObjectInfo?> StatAsync(string objectId, CancellationToken ct)`; `string GetPublicUrl(string objectId)`.
 - `PresignedUpload` contains only the one-object upload URL and required request headers/fields; storage abstraction has no provider-selection logic.
 
-- [ ] Use a local MinIO Testcontainer to test bucket initialization, upload/stat round-trip, saved Content-Type, generated public URL, presigned upload constraints, and missing-object result.
-- [ ] Run focused storage tests and confirm they fail before the adapter exists.
-- [ ] Implement MinIO bucket initialization with anonymous read-only policy; never grant anonymous write/list/delete. Configure presign TTL and exact object metadata/size conditions supported by the S3-compatible request.
-- [ ] Ensure public URLs are built only from `PUBLIC_MEDIA_BASE_URL` and the generated object id; test that internal bucket and MinIO endpoint are not included.
+- [x] Use a local MinIO Testcontainer to test bucket initialization, upload/stat round-trip, saved Content-Type, generated public URL, presigned upload constraints, and missing-object result.
+- [x] Run focused storage tests and confirm they fail before the adapter exists.
+- [x] Implement MinIO bucket initialization with anonymous read-only policy; never grant anonymous write/list/delete. Configure presign TTL and exact object metadata/size conditions supported by the S3-compatible request.
+- [x] Ensure public URLs are built only from `PUBLIC_MEDIA_BASE_URL` and the generated object id; test that internal bucket and MinIO endpoint are not included.
 - [ ] Run the focused Testcontainers storage tests and confirm all pass.
-- [ ] Commit as `feat: add MinIO media storage`.
+- [x] Commit as `feat: add MinIO media storage`.
 
 ### Task 5: Build browser upload API and health endpoint
 
@@ -281,6 +281,7 @@
 - Health, structured logging, ProblemDetails, secrets and Docker health: Tasks 1, 5, 6, 8–10.
 - CI tests/build/image labels/tags, PR isolation, manual deployment, SSH to VPS and GH repository metadata: Tasks 9–11.
 - No database/migration path, no alternative storage providers, no frontend build, and no deferred features are added.
+
 
 
 
