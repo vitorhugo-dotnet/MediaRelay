@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Upload media · MediaRelay</title>
+  <link rel="stylesheet" href="/upload.css">
+  <script src="/upload.js" defer></script>
+</head>
+<body>
+  <main class="panel" data-max-bytes="{{MAX_UPLOAD_SIZE}}">
+    <p class="eyebrow">MediaRelay</p>
+    <h1>Share a photo or video</h1>
+    <p class="intro">Choose an image or MP4 video to upload. Your file is sent directly to media storage.</p>
+
+    <form id="upload-form">
+      <label class="drop-zone" id="drop-zone" for="file-input">
+        <span class="drop-icon" aria-hidden="true">↑</span>
+        <strong>Drop a file here</strong>
+        <span>or tap to choose from your device</span>
+        <span class="formats">PNG, JPEG, GIF, WebP or MP4</span>
+        <input id="file-input" type="file" accept="image/png,image/jpeg,image/gif,image/webp,video/mp4,.png,.jpg,.jpeg,.gif,.webp,.mp4" required>
+      </label>
+      <p id="file-name" class="file-name" aria-live="polite"></p>
+      <button id="upload-button" type="submit">Upload file</button>
+    </form>
+
+    <section id="status" class="status" role="status" aria-live="polite" hidden>
+      <p id="status-message"></p>
+      <progress id="progress" max="100" value="0" hidden></progress>
+      <div id="result" hidden>
+        <label for="public-url">Your public link</label>
+        <div class="link-row">
+          <input id="public-url" type="url" readonly>
+          <button id="copy-button" type="button" class="secondary">Copy</button>
+        </div>
+      </div>
+    </section>
+    <noscript>This uploader needs JavaScript enabled.</noscript>
+  </main>
+</body>
+</html>

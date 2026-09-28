@@ -71,8 +71,10 @@ builder.Services.AddHostedService<DiscordBotWorker>();
 
 var app = builder.Build();
 app.UseExceptionHandler();
+app.UseStaticFiles();
 app.MapHealthEndpoints();
 app.MapUploadEndpoints();
+app.MapUploadPageEndpoints();
 app.Run();
 
 static bool IsAbsoluteHttpUrl(string value) =>
