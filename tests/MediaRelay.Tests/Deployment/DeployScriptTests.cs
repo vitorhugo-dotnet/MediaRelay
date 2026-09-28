@@ -25,19 +25,64 @@ public sealed class DeployScriptTests
         }
     }
 
-    [Theory]
-    [InlineData("   ")]
-    [InlineData("replace-with-random-upload-api-key")]
-    public async Task RejectsBlankOrExampleRequiredValueWithoutPrintingIt(string value)
+    [Fact]
+    public async Task ProcessEnvironmentShaImageOverridesImageFromEnvFile()
     {
-        var fixture = CreateFixture($"IMAGE=ghcr.io/vitorhugo-dotnet/media-relay:sha-{new string('b', 40)}\n" + ValidEnvironment(value));
+        var image = $"ghcr.io/vitorhugo-dotnet/media-relay:sha-{new string('c', 40)}";
+        var fixture = CreateFixture("IMAGE=media-relay:local\n" + ValidEnvironment("private-upload-key-for-test"));
+        try
+        {
+            var result = await RunScript(fixture, image);
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains(image, result.StandardOutput, StringComparison.Ordinal);
+            Assert.Equal(3, File.ReadAllLines(fixture.DockerLog).Length);
+        }
+        finally
+        {
+            Directory.Delete(fixture.Root, recursive: true);
+        }
+    }
+
+    [Theory]
+    [InlineData("bad-image")]
+    [InlineData("ghcr.io/vitorhugo-dotnet/media-relay:latest")]
+    public async Task RejectsMalformedProcessImageBeforeCallingCompose(string image)
+    {
+        var fixture = CreateFixture($"IMAGE=ghcr.io/vitorhugo-dotnet/media-relay:sha-{new string('d', 40)}\n" + ValidEnvironment("private-upload-key-for-test"));
+        try
+        {
+            var result = await RunScript(fixture, image);
+
+            Assert.Equal(2, result.ExitCode);
+            Assert.Contains("IMAGE", result.StandardError, StringComparison.Ordinal);
+            Assert.DoesNotContain(image, result.StandardError, StringComparison.Ordinal);
+            Assert.False(File.Exists(fixture.DockerLog));
+        }
+        finally
+        {
+            Directory.Delete(fixture.Root, recursive: true);
+        }
+    }
+
+    [Theory]
+    [InlineData("MINIO_ROOT_USER", "   ", false)]
+    [InlineData("MINIO_ROOT_PASSWORD", "replace-with-a-long-password", false)]
+    [InlineData("UPLOAD_API_KEY", "replace-with-random-upload-api-key", false)]
+    [InlineData("DISCORD_TOKEN", "   ", true)]
+    [InlineData("DISCORD_APPLICATION_ID", "replace-with-discord-app-id", true)]
+    public async Task RejectsBlankOrExampleRequiredValuesWithoutPrintingThem(string key, string value, bool discordEnabled)
+    {
+        var image = $"ghcr.io/vitorhugo-dotnet/media-relay:sha-{new string('e', 40)}";
+        var fixture = CreateFixture($"IMAGE={image}\n" + ValidEnvironment("private-upload-key-for-test", discordEnabled, key, value));
         try
         {
             var result = await RunScript(fixture);
 
             Assert.Equal(2, result.ExitCode);
-            Assert.Contains("UPLOAD_API_KEY", result.StandardError, StringComparison.Ordinal);
-            Assert.DoesNotContain(value, result.StandardError, StringComparison.Ordinal);
+            Assert.Contains(key, result.StandardError, StringComparison.Ordinal);
+            if (!string.IsNullOrEmpty(value))
+                Assert.DoesNotContain(value, result.StandardError, StringComparison.Ordinal);
             Assert.False(File.Exists(fixture.DockerLog));
         }
         finally
@@ -56,7 +101,7 @@ public sealed class DeployScriptTests
         return new Fixture(root, Path.Combine(root, "docker-calls.log"));
     }
 
-    private static async Task<ProcessResult> RunScript(Fixture fixture)
+    private static async Task<ProcessResult> RunScript(Fixture fixture, string? image = null)
     {
         var startInfo = new ProcessStartInfo(FindBashExecutable())
         {
@@ -68,7 +113,10 @@ public sealed class DeployScriptTests
         startInfo.ArgumentList.Add("docker() { printf '%s\\n' \"$*\" >> \"$DOCKER_CALL_LOG\"; }; export -f docker; source \"$1\"");
         startInfo.ArgumentList.Add("deploy-test");
         startInfo.ArgumentList.Add(Path.Combine(fixture.Root, "deploy", "deploy.sh"));
-        startInfo.Environment.Remove("IMAGE");
+        if (image is null)
+            startInfo.Environment.Remove("IMAGE");
+        else
+            startInfo.Environment["IMAGE"] = image;
         startInfo.Environment["DOCKER_CALL_LOG"] = fixture.DockerLog;
         using var process = Process.Start(startInfo)!;
         var stdout = await process.StandardOutput.ReadToEndAsync();
@@ -101,14 +149,24 @@ public sealed class DeployScriptTests
         throw new DirectoryNotFoundException("Could not locate MediaRelay.sln from the test output directory.");
     }
 
-    private static string ValidEnvironment(string uploadKey) =>
-        "MINIO_ROOT_USER=admin-user\n" +
-        "MINIO_ROOT_PASSWORD=strong-password-not-printed\n" +
-        "PUBLIC_APP_BASE_URL=https://upload.example.test\n" +
-        "PUBLIC_MEDIA_BASE_URL=https://media.example.test\n" +
-        "MINIO_PUBLIC_ENDPOINT=media.example.test\n" +
-        $"UPLOAD_API_KEY={uploadKey}\n" +
-        "DISCORD_ENABLED=false\n";
+    private static string ValidEnvironment(string uploadKey, bool discordEnabled = false, string? overrideKey = null, string? overrideValue = null)
+    {
+        var values = new Dictionary<string, string>
+        {
+            ["MINIO_ROOT_USER"] = "admin-user",
+            ["MINIO_ROOT_PASSWORD"] = "strong-password-not-printed",
+            ["PUBLIC_APP_BASE_URL"] = "https://upload.example.test",
+            ["PUBLIC_MEDIA_BASE_URL"] = "https://media.example.test",
+            ["MINIO_PUBLIC_ENDPOINT"] = "media.example.test",
+            ["UPLOAD_API_KEY"] = uploadKey,
+            ["DISCORD_ENABLED"] = discordEnabled ? "true" : "false",
+            ["DISCORD_TOKEN"] = "private-discord-token-for-test",
+            ["DISCORD_APPLICATION_ID"] = "123456789012345678"
+        };
+        if (overrideKey is not null)
+            values[overrideKey] = overrideValue!;
+        return string.Join('\n', values.Select(pair => $"{pair.Key}={pair.Value}")) + "\n";
+    }
 
     private sealed record Fixture(string Root, string DockerLog);
     private sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError);
