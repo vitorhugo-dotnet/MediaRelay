@@ -69,11 +69,11 @@
 **Interfaces:**
 - Produces: `DiscordOptions`, `MinioOptions`, `PublicUrlOptions`, and `UploadOptions` bound from configuration and validated at startup; `Program` binds and validates configuration; each feature task maps its endpoint extensions when those endpoints are created.
 
-- [ ] Create the .NET 10 web and test projects, add the solution, and add Discord.Net 3.20.1, its Interactions/WebSocket packages, MinIO SDK, and test dependencies at the spec-pinned versions.
-- [ ] Add startup option validation for required secrets/endpoints and defaults `media`, `536870912`, 30 minutes, and 15 minutes; unit-test valid defaults and missing required production values.
-- [ ] Add `.env.example` containing names and non-secret example values for every configuration key in spec section 26; ensure no actual credential is present.
-- [ ] Run `dotnet test MediaRelay.sln` and confirm the initial test project passes.
-- [ ] Commit as `chore: scaffold MediaRelay solution`.
+- [x] Create the .NET 10 web and test projects, add the solution, and add Discord.Net 3.20.1, its Interactions/WebSocket packages, MinIO SDK, and test dependencies at the spec-pinned versions.
+- [x] Add startup option validation for required secrets/endpoints and defaults `media`, `536870912`, 30 minutes, and 15 minutes; unit-test valid defaults and missing required production values.
+- [x] Add `.env.example` containing names and non-secret example values for every configuration key in spec section 26; ensure no actual credential is present.
+- [x] Run `dotnet test MediaRelay.sln` and confirm the initial test project passes.
+- [x] Commit as `chore: scaffold MediaRelay solution`.
 
 ### Task 2: Implement media validation and object identifiers
 
@@ -281,6 +281,7 @@
 - Health, structured logging, ProblemDetails, secrets and Docker health: Tasks 1, 5, 6, 8–10.
 - CI tests/build/image labels/tags, PR isolation, manual deployment, SSH to VPS and GH repository metadata: Tasks 9–11.
 - No database/migration path, no alternative storage providers, no frontend build, and no deferred features are added.
+
 
 
 
