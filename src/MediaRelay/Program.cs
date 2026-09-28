@@ -3,6 +3,7 @@ using MediaRelay.Health;
 using MediaRelay.Uploads;
 using MediaRelay.Storage;
 using MediaRelay.Discord;
+using MediaRelay.ShareX;
 using Discord.Interactions;
 using Discord.WebSocket;
 
@@ -74,6 +75,7 @@ app.UseExceptionHandler();
 app.UseStaticFiles();
 app.MapHealthEndpoints();
 app.MapUploadEndpoints();
+app.MapShareXEndpoints();
 app.MapUploadPageEndpoints();
 app.Run();
 
