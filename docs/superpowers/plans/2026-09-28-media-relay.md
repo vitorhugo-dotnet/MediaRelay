@@ -101,8 +101,8 @@
 - Test: `tests/MediaRelay.Tests/Uploads/UploadSessionServiceTests.cs`
 
 **Interfaces:**
-- Produces: `Task<UploadSession> CreateAsync(ulong guildId, ulong channelId, ulong userId, CancellationToken ct)`; `Task<UploadSession?> FindAsync(string token, CancellationToken ct)`; one-time transition methods to prepare, complete, and mark Discord publication status.
-- `UploadSession` retains session id, secret token hash, guild/channel/user IDs, expiration, object id, validated media metadata, and publication status; raw session token is returned only from creation and is never stored or logged.
+- Produces: `Task<CreatedUploadSession> CreateAsync(ulong guildId, ulong channelId, ulong userId, CancellationToken ct)`; `Task<UploadSession?> FindAsync(string token, CancellationToken ct)`; one-time transition methods to prepare, complete, and mark Discord publication status.
+- `CreatedUploadSession` returns the raw URL-safe token exactly once with non-secret metadata. `UploadSession` stores only the token hash, session id, guild/channel/user IDs, expiration, object id, validated media metadata, and publication status; never log the raw token.
 
 - [ ] Test creation, cryptographically random URL-safe bearer tokens, token hashing, 30-minute expiry default, rejection after expiration, and token-bearing route compatibility.
 - [ ] Test concurrency: only one upload preparation/claim succeeds for a session, repeat completion is idempotent, and invalid state transitions fail.
@@ -281,4 +281,5 @@
 - Health, structured logging, ProblemDetails, secrets and Docker health: Tasks 1, 5, 6, 8–10.
 - CI tests/build/image labels/tags, PR isolation, manual deployment, SSH to VPS and GH repository metadata: Tasks 9–11.
 - No database/migration path, no alternative storage providers, no frontend build, and no deferred features are added.
+
 
