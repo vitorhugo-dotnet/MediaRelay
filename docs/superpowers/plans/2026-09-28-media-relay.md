@@ -104,12 +104,12 @@
 - Produces: `Task<CreatedUploadSession> CreateAsync(ulong guildId, ulong channelId, ulong userId, CancellationToken ct)`; `Task<UploadSession?> FindAsync(string token, CancellationToken ct)`; one-time transition methods to prepare, complete, and mark Discord publication status.
 - `CreatedUploadSession` returns the raw URL-safe token exactly once with non-secret metadata. `UploadSession` stores only the token hash, session id, guild/channel/user IDs, expiration, object id, validated media metadata, and publication status; never log the raw token.
 
-- [ ] Test creation, cryptographically random URL-safe bearer tokens, token hashing, 30-minute expiry default, rejection after expiration, and token-bearing route compatibility.
-- [ ] Test concurrency: only one upload preparation/claim succeeds for a session, repeat completion is idempotent, and invalid state transitions fail.
-- [ ] Run the focused session test filter and verify failure before implementation.
-- [ ] Implement the state machine over `IMemoryCache` with expiration and atomic per-session transitions; keep the original channel and user metadata for publication/audit fields.
-- [ ] Run focused session tests and verify all race/idempotency assertions pass.
-- [ ] Commit as `feat: add expiring upload sessions`.
+- [x] Test creation, cryptographically random URL-safe bearer tokens, token hashing, 30-minute expiry default, rejection after expiration, and token-bearing route compatibility.
+- [x] Test concurrency: only one upload preparation/claim succeeds for a session, repeat completion is idempotent, and invalid state transitions fail.
+- [x] Run the focused session test filter and verify failure before implementation.
+- [x] Implement the state machine over `IMemoryCache` with expiration and atomic per-session transitions; keep the original channel and user metadata for publication/audit fields.
+- [x] Run focused session tests and verify all race/idempotency assertions pass.
+- [x] Commit as `feat: add expiring upload sessions`.
 
 ### Task 4: Isolate MinIO storage operations
 
@@ -281,6 +281,7 @@
 - Health, structured logging, ProblemDetails, secrets and Docker health: Tasks 1, 5, 6, 8–10.
 - CI tests/build/image labels/tags, PR isolation, manual deployment, SSH to VPS and GH repository metadata: Tasks 9–11.
 - No database/migration path, no alternative storage providers, no frontend build, and no deferred features are added.
+
 
 
 
