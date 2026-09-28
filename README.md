@@ -40,7 +40,10 @@ The deployment workflow uses the protected GitHub Actions environment named `pro
 - `VPS_HOST`: VPS hostname or address.
 - `VPS_USER`: SSH account with permission to manage the deployment directory and Docker Compose.
 - `VPS_SSH_KEY`: private key for that account.
+- `VPS_SSH_KNOWN_HOSTS`: pinned SSH host-key line(s) in OpenSSH `known_hosts` format, matching `VPS_HOST`.
 - `VPS_DEPLOY_PATH`: absolute path to the MediaRelay deployment directory on the VPS.
+
+Provision `VPS_SSH_KNOWN_HOSTS` from a trusted server console or administrator. Verify the host-key fingerprint through an independent trusted channel before adding its public key in `known_hosts` format; do not trust a key collected from the deployment runner at connection time. The workflow writes this secret to its private SSH configuration and checks that it contains a key for `VPS_HOST` before connecting. Keep the private key and host-key lines in the protected `production` environment secrets; neither value is printed by the workflow.
 
 Create `.env` in that directory before deploying. It must include `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `PUBLIC_APP_BASE_URL`, `PUBLIC_MEDIA_BASE_URL`, `MINIO_PUBLIC_ENDPOINT`, and `UPLOAD_API_KEY`; also set `DISCORD_TOKEN` and `DISCORD_APPLICATION_ID` when `DISCORD_ENABLED` is not `false`. Set `IMAGE` to `ghcr.io/vitorhugo-dotnet/media-relay:sha-<40-character-commit-sha>` for manual deployments. The `deploy/deploy.sh` script checks the immutable image reference and required values before pulling or restarting services; it does not print secret values.
 
