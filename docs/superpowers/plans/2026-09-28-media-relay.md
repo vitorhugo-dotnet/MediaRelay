@@ -254,13 +254,13 @@
 - `main` publishes `ghcr.io/vitorhugo-dotnet/media-relay:sha-<commit>` and `:latest`, then deploys that exact SHA image through the protected `production` environment.
 - Manual dispatch accepts a deploy boolean and an image tag. When deploy is true, require an immutable `sha-<commit>` tag under `ghcr.io/vitorhugo-dotnet/media-relay`; deploy that existing image without rebuilding or republishing it.
 
-- [ ] Add workflow triggers for `main`, pull requests, and `workflow_dispatch`; separate build, test, publish, and deploy jobs with explicit minimal permissions and concurrency control.
-- [ ] Build job resolves `MediaRelay.sln`, installs .NET 10, restores and builds Release; test job runs all test projects and uploads TRX artifacts even when tests fail.
-- [ ] Pull request Docker build must not log into GHCR or deploy. Main publication logs into GHCR using `GITHUB_TOKEN`, attaches source/revision OCI labels, caches layers, and pushes SHA plus `latest` tags.
-- [ ] Deploy job requires successful image publication on `main` or an explicit manual deployment with an immutable SHA image input; use protected `production` environment, SSH secrets, and clear preflight errors; transfer only Compose/deploy files and restart that exact image.
-- [ ] Follow the job boundaries and GHCR/SSH delivery pattern in `vitorhugo-dotnet/dotnet_RelayControl`; omit EF/migration actions because the spec has no database.
-- [ ] Validate workflow syntax and behavior with a PR-style run; verify it cannot publish/deploy on PR and that missing secrets fail before SSH.
-- [ ] Commit as `ci: build publish and deploy MediaRelay`.
+- [x] Add workflow triggers for `main`, pull requests, and `workflow_dispatch`; separate build, test, publish, and deploy jobs with explicit minimal permissions and concurrency control.
+- [x] Build job resolves `MediaRelay.sln`, installs .NET 10, restores and builds Release; test job runs all test projects and uploads TRX artifacts even when tests fail.
+- [x] Pull request Docker build must not log into GHCR or deploy. Main publication logs into GHCR using `GITHUB_TOKEN`, attaches source/revision OCI labels, caches layers, and pushes SHA plus `latest` tags.
+- [x] Deploy job requires successful image publication on `main` or an explicit manual deployment with an immutable SHA image input; use protected `production` environment, SSH secrets, and clear preflight errors; transfer only Compose/deploy files and restart that exact image.
+- [x] Follow the job boundaries and GHCR/SSH delivery pattern in `vitorhugo-dotnet/dotnet_RelayControl`; omit EF/migration actions because the spec has no database.
+- [ ] Validate workflow syntax and behavior with a PR-style run; verify it cannot publish/deploy on PR and that missing secrets fail before SSH. Static review approved; no live GitHub Actions run or YAML parser was available in this environment.
+- [x] Commit as `ci: build publish and deploy MediaRelay`.
 
 ### Task 11: Create and publish the public GitHub repository
 
