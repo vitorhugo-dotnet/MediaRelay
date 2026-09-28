@@ -217,11 +217,11 @@
 **Interfaces:**
 - Produces `POST /api/sharex/upload`, authenticated by constant-time comparison of configured `UPLOAD_API_KEY`; success returns JSON with canonical public URL.
 
-- [ ] Test missing/wrong key, invalid extension/MIME/signature, oversized streaming request, correct MinIO upload metadata, and response shape expected by the `.sxcu` configuration.
-- [ ] Implement bounded streaming with request-size enforcement before buffering, magic-byte validation, generated object key, structured safe logs, and clear ProblemDetails errors.
-- [ ] Add importable `.sxcu` file configured to send the API key using a user-supplied ShareX field/environment setup; never write a real key into the file.
-- [ ] Run focused ShareX API tests using fake storage and verify no key appears in logs or responses.
-- [ ] Commit as `feat: add ShareX custom uploader`.
+- [x] Test missing/wrong key, invalid extension/MIME/signature, oversized streaming request, correct MinIO upload metadata, and response shape expected by the `.sxcu` configuration.
+- [x] Implement bounded streaming with request-size enforcement before buffering, magic-byte validation, generated object key, structured safe logs, and clear ProblemDetails errors.
+- [x] Add importable `.sxcu` file configured to prompt for the API key using supported ShareX `{inputbox:...}` header syntax; never write a real key into the file.
+- [x] Run focused ShareX API tests using fake storage and verify no key appears in logs or responses.
+- [x] Commit as `feat: add ShareX custom uploader`.
 
 ### Task 9: Package and run the production stack
 
