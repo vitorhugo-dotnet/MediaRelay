@@ -1,1 +1,22 @@
 /.worktrees/
+
+## Build output
+**/bin/
+**/obj/
+TestResults/
+coverage/
+
+## Local configuration and credentials
+.env
+.env.*
+!.env.example
+secrets.json
+appsettings.*.local.json
+
+## IDE and operating system files
+.vs/
+.idea/
+*.user
+*.suo
+Thumbs.db
+.DS_Store
