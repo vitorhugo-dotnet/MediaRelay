@@ -5,7 +5,7 @@
   "RequestMethod": "POST",
   "RequestURL": "https://upload.hugodotnet.dev/api/sharex/upload",
   "Headers": {
-    "Authorization": "Bearer %MediaRelayApiKey%"
+    "Authorization": "Bearer {inputbox:MediaRelay API key}"
   },
   "Body": "MultipartFormData",
   "Arguments": {},

@@ -101,6 +101,28 @@ public sealed class ShareXEndpointTests
         Assert.DoesNotContain(ApiKey, factory.Logs.ToString(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ShareXConfigurationPromptsForApiKeyUsingSupportedInputBoxSyntax()
+    {
+        var path = FindRepositoryFile("sharex/MediaRelay.sxcu");
+        var config = File.ReadAllText(path);
+
+        Assert.Contains("Bearer {inputbox:MediaRelay API key}", config, StringComparison.Ordinal);
+        Assert.DoesNotContain("%MediaRelayApiKey%", config, StringComparison.Ordinal);
+    }
+
+    private static string FindRepositoryFile(string relativePath)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(directory.FullName, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(candidate)) return candidate;
+            directory = directory.Parent;
+        }
+        throw new FileNotFoundException($"Could not find repository file '{relativePath}'.");
+    }
+
     private static MultipartFormDataContent CreateForm(string fileName, string contentType, byte[] bytes)
     {
         var form = new MultipartFormDataContent();
