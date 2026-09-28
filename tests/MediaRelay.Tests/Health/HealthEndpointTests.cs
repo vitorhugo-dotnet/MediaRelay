@@ -28,7 +28,7 @@ public sealed class HealthEndpointTests
         {
             builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Discord:Token"] = "test", ["Discord:ApplicationId"] = "123",
+                ["Discord:Token"] = "test", ["Discord:ApplicationId"] = "123", ["Discord:Enabled"] = "false",
                 ["Minio:Endpoint"] = "localhost:9000", ["Minio:PublicEndpoint"] = "localhost:9000",
                 ["Minio:AccessKey"] = "test", ["Minio:SecretKey"] = "test",
                 ["PublicUrls:MediaBaseUrl"] = "https://media.test", ["PublicUrls:AppBaseUrl"] = "https://app.test",

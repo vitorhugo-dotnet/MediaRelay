@@ -15,5 +15,21 @@
 
 ## Concerns
 
-- Discord gateway startup requires valid `Discord:Token` and `Discord:ApplicationId`; `Discord:Enabled=false` is available for environments that intentionally run without the bot.
-- Failed or indeterminate Discord sends remain retryable. As with any remote send without an idempotency key, a network interruption after Discord accepts a message but before the client receives confirmation can result in a duplicate on retry.
+- Discord history reconciliation reads at most the latest 50 messages in the original channel and matches the bot author plus exact URL. The bot needs View Channel, Read Message History, and Send Messages permissions there. If history cannot be read, publication fails without sending. Messages older than the 50-message search window cannot prevent a later duplicate retry.
+- Discord credentials are required only when `Discord:Enabled=true` (the default). After bot login, the authenticated REST client's application ID is checked against configured `Discord:ApplicationId` before command registration.
+
+## Fix round 1 verification
+
+Commands and results:
+
+```text
+dotnet test tests/MediaRelay.Tests/MediaRelay.Tests.csproj --filter "FullyQualifiedName~DiscordMediaPublisherTests|FullyQualifiedName~DiscordApplicationIdentityVerifierTests|FullyQualifiedName~OptionsValidationTests|FullyQualifiedName~UploadModuleTests|FullyQualifiedName~UploadEndpointsTests|FullyQualifiedName~UploadSessionServiceTests|FullyQualifiedName~HealthEndpointTests" --no-restore
+Passed! - Failed: 0, Passed: 28, Skipped: 0, Total: 28
+
+dotnet test MediaRelay.sln --no-restore
+Failed! - Failed: 4, Passed: 59, Skipped: 0, Total: 63
+The four failures are Testcontainers MinIO integration tests; Docker is unavailable at npipe://./pipe/docker_engine.
+
+git diff --check
+Passed (no whitespace errors).
+```

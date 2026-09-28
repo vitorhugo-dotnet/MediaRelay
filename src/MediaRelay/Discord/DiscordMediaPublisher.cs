@@ -6,6 +6,7 @@ public sealed class DiscordMediaPublisher(IDiscordChannelTransport transport) : 
     {
         try
         {
+            if (await transport.HasRecentBotMessageAsync(guildId, channelId, publicUrl, ct)) return true;
             await transport.SendMessageAsync(guildId, channelId, publicUrl, ct);
             return true;
         }

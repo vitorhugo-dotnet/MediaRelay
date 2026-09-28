@@ -34,7 +34,6 @@ builder.Configuration.AddInMemoryCollection(environmentConfiguration);
 builder.Services.AddOptions<DiscordOptions>()
     .Bind(builder.Configuration.GetSection(DiscordOptions.SectionName))
     .ValidateDataAnnotations()
-    .Validate(options => options.ApplicationId > 0, "Discord application ID must be greater than zero.")
     .ValidateOnStart();
 builder.Services.AddOptions<MinioOptions>()
     .Bind(builder.Configuration.GetSection(MinioOptions.SectionName))
@@ -62,6 +61,8 @@ builder.Services.AddSingleton<IMediaStorage, MinioMediaStorage>();
 builder.Services.AddSingleton(_ => new DiscordSocketClient(new DiscordSocketConfig { GatewayIntents = Discord.GatewayIntents.Guilds }));
 builder.Services.AddSingleton(provider => new InteractionService(provider.GetRequiredService<DiscordSocketClient>().Rest));
 builder.Services.AddSingleton<InteractionHandler>();
+builder.Services.AddSingleton<IDiscordApplicationInfoProvider, DiscordApplicationInfoProvider>();
+builder.Services.AddSingleton<DiscordApplicationIdentityVerifier>();
 builder.Services.AddSingleton<DiscordBotService>();
 builder.Services.AddSingleton<IDiscordChannelTransport, DiscordChannelTransport>();
 builder.Services.AddSingleton<IMediaPublisher, DiscordMediaPublisher>();

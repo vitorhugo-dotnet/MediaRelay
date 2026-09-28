@@ -1,4 +1,6 @@
 using MediaRelay.Options;
+using Discord;
+using Discord.WebSocket;
 using Microsoft.Extensions.Options;
 
 namespace MediaRelay.Discord;
@@ -21,11 +23,27 @@ public sealed class DiscordBotWorker(DiscordBotService bot, IOptions<DiscordOpti
 
 public sealed class DiscordChannelTransport(DiscordBotService bot) : IDiscordChannelTransport
 {
+    public async Task<bool> HasRecentBotMessageAsync(ulong guildId, ulong channelId, string message, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var channel = GetChannel(guildId, channelId);
+        var botUserId = bot.Client.CurrentUser.Id;
+        await using var history = channel.GetMessagesAsync(50).GetAsyncEnumerator(ct);
+        while (await history.MoveNextAsync())
+        {
+            foreach (var recent in history.Current)
+                if (recent.Author.Id == botUserId && string.Equals(recent.Content, message, StringComparison.Ordinal)) return true;
+        }
+        return false;
+    }
+
     public async Task SendMessageAsync(ulong guildId, ulong channelId, string message, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        var channel = bot.Client.GetGuild(guildId)?.GetTextChannel(channelId)
-            ?? throw new InvalidOperationException("The target Discord channel is unavailable.");
+        var channel = GetChannel(guildId, channelId);
         await channel.SendMessageAsync(message);
     }
+
+    private SocketTextChannel GetChannel(ulong guildId, ulong channelId) => bot.Client.GetGuild(guildId)?.GetTextChannel(channelId)
+        ?? throw new InvalidOperationException("The target Discord channel is unavailable.");
 }

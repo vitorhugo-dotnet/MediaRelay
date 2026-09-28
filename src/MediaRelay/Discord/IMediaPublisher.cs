@@ -7,5 +7,6 @@ public interface IMediaPublisher
 
 public interface IDiscordChannelTransport
 {
+    Task<bool> HasRecentBotMessageAsync(ulong guildId, ulong channelId, string message, CancellationToken ct);
     Task SendMessageAsync(ulong guildId, ulong channelId, string message, CancellationToken ct);
 }

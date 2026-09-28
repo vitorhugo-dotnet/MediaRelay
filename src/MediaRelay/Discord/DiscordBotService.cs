@@ -11,6 +11,7 @@ public sealed class DiscordBotService : IAsyncDisposable
     private readonly DiscordSocketClient _client;
     private readonly InteractionService _interactions;
     private readonly InteractionHandler _handler;
+    private readonly DiscordApplicationIdentityVerifier _identityVerifier;
     private readonly IServiceProvider _services;
     private readonly DiscordOptions _options;
     private readonly IHostEnvironment _environment;
@@ -21,10 +22,11 @@ public sealed class DiscordBotService : IAsyncDisposable
 
     public DiscordBotService(IServiceProvider services, InteractionHandler handler, DiscordSocketClient client,
         InteractionService interactions, IOptions<DiscordOptions> options,
-        IHostEnvironment environment, ILogger<DiscordBotService> logger)
+        DiscordApplicationIdentityVerifier identityVerifier, IHostEnvironment environment, ILogger<DiscordBotService> logger)
     {
         _services = services;
         _handler = handler;
+        _identityVerifier = identityVerifier;
         _options = options.Value;
         _environment = environment;
         _logger = logger;
@@ -36,8 +38,14 @@ public sealed class DiscordBotService : IAsyncDisposable
     {
         if (!_options.Enabled) return;
         await _interactions.AddModulesAsync(typeof(DiscordBotService).Assembly, _services);
-        _handler.Attach();
         await _client.LoginAsync(TokenType.Bot, _options.Token);
+        try { await _identityVerifier.VerifyAsync(_options.ApplicationId, ct); }
+        catch
+        {
+            await _client.LogoutAsync();
+            throw;
+        }
+        _handler.Attach();
         await _client.StartAsync();
         var guilds = ParseAllowedGuilds(_options.AllowedGuildIds).ToArray();
         if (_environment.IsDevelopment() || _options.RegisterCommandsPerGuild)
