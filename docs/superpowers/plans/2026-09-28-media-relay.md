@@ -150,13 +150,13 @@
 - `POST /api/uploads/prepare` accepts session token, filename, declared MIME, and size; returns a generated object id and presigned authorization.
 - `POST /api/uploads/complete` accepts the upload session token and returns stored URL plus publication state after verifying object metadata.
 
-- [ ] Add failing `MediaValidatorTests` for metadata-only allowed/mismatched extension and MIME pairs, then API tests for missing/invalid/expired token route behavior, unsupported file, oversized size, unavailable MinIO, missing object, metadata mismatch, successful prepare/complete, duplicate completion, and safe retry after a presign-generation failure.
-- [ ] Add health test asserting `GET /health` returns HTTP 200 and `{"status":"healthy"}` without credentials or internal endpoint details.
-- [ ] Run focused API tests to confirm they fail before route mapping.
-- [ ] Implement prepare/complete using the session, validator, and `IMediaStorage`; enforce one-time state transitions, size ceiling, stored size and Content-Type verification, ProblemDetails errors, and safe logging fields. If presign creation fails before returning URL/fields, release the preparation claim so the same session can retry; do not release after an authorization has been returned.
-- [ ] Map health liveness independently of optional MinIO detail; ensure production exception middleware never returns stack traces.
-- [ ] Run focused API and health tests; assert completion never repeats a publication action after successful completion.
-- [ ] Commit as `feat: add browser upload API and health endpoint`.
+- [x] Add failing `MediaValidatorTests` for metadata-only allowed/mismatched extension and MIME pairs, then API tests for missing/invalid/expired token route behavior, unsupported file, oversized size, unavailable MinIO, missing object, metadata mismatch, successful prepare/complete, duplicate completion, and safe retry after a presign-generation failure.
+- [x] Add health test asserting `GET /health` returns HTTP 200 and `{"status":"healthy"}` without credentials or internal endpoint details.
+- [x] Run focused API tests to confirm they fail before route mapping.
+- [x] Implement prepare/complete using the session, validator, and `IMediaStorage`; enforce one-time state transitions, size ceiling, stored size and Content-Type verification, ProblemDetails errors, and safe logging fields. If presign creation fails before returning URL/fields, release the preparation claim so the same session can retry; do not release after an authorization has been returned.
+- [x] Map health liveness independently of optional MinIO detail; ensure production exception middleware never returns stack traces.
+- [x] Run focused API and health tests; assert completion never repeats a publication action after successful completion.
+- [x] Commit as `feat: add browser upload API and health endpoint`.
 
 ### Task 6: Implement Discord Gateway and publication
 
@@ -286,6 +286,7 @@
 - Health, structured logging, ProblemDetails, secrets and Docker health: Tasks 1, 5, 6, 8–10.
 - CI tests/build/image labels/tags, PR isolation, manual deployment, SSH to VPS and GH repository metadata: Tasks 9–11.
 - No database/migration path, no alternative storage providers, no frontend build, and no deferred features are added.
+
 
 
 
