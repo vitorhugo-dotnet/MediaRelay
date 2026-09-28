@@ -80,3 +80,5 @@ Task 6: complete (commits 8210d08..cd79887, scoped review approved; 28 focused t
 Ruling: Use browser FormData with the returned presigned POST fields and no custom headers, and set MinIO global MINIO_API_CORS_ALLOW_ORIGIN to PUBLIC_APP_BASE_URL in Task 9 — MinIO SDK 6.0.3 has no bucket CORS API. Its global setting cannot restrict methods/headers per bucket, so preserve this limitation in deployment docs and do not claim per-bucket restrictions.
 Task 7: fix round 1/5 (1 addressed, 0 open; rejected drag-and-drop files can no longer reach prepare; commits 06dddff..d6514ad)
 Task 7: complete (commits 06dddff..d6514ad, scoped review approved; focused endpoint tests 2/2; browser-to-MinIO and global CORS deployment verification deferred because Docker unavailable and MinIO global setting has no per-bucket method/header control)
+Task 8: fix round 1/5 (1 addressed, 0 open; replace unsupported environment marker with documented ShareX inputbox header prompt; commits f34ec53..96507f3)
+Task 8: complete (commits f34ec53..96507f3, scoped review approved; focused ShareX tests 7/7)
