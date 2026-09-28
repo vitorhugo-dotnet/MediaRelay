@@ -63,7 +63,7 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - name: Build pinned MinIO Community test image
-        run: docker build --file minio-community.Dockerfile --tag media-relay-minio:community-9e49d5e deploy
+        run: docker build --file deploy/minio-community.Dockerfile --tag media-relay-minio:community-9e49d5e deploy
       - name: Run tests
         run: dotnet test MediaRelay.sln --configuration Release --logger "trx;LogFileName=MediaRelay.trx" --results-directory TestResults
       - name: Upload test results
