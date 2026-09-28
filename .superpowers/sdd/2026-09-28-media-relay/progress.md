@@ -84,3 +84,5 @@ Task 8: fix round 1/5 (1 addressed, 0 open; replace unsupported environment mark
 Task 8: complete (commits f34ec53..96507f3, scoped review approved; focused ShareX tests 7/7)
 Task 9: fix round 1/5 (2 addressed, 0 open; resolve IMAGE from environment or dotenv key only, reject blank/placeholders; add preflight test coverage; commits fcde6ea..e5d8cdb)
 Task 9: complete (commits fcde6ea..e5d8cdb, scoped review approved; Compose contract test and Compose config passed; deploy script syntax and 9 focused tests passed; Docker build and live stack persistence remain environment-blocked by unavailable Docker Desktop daemon)
+Task 10: fix round 1/5 (1 addressed; pin VPS SSH known-host entry rather than trusting ssh-keyscan; commits aae72e7..fd13b67)
+Task 10: complete (commits aae72e7..fd13b67, scoped workflow and SSH pin reviews approved; 78 solution tests passed and 4 MinIO integration tests blocked by unavailable Docker; live Actions PR-style run and automated YAML parser remain unavailable)
