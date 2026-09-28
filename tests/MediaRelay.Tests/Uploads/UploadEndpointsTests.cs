@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using MediaRelay.Options;
+using MediaRelay.Discord;
 using MediaRelay.Storage;
 using MediaRelay.Uploads;
 using Microsoft.AspNetCore.Hosting;
@@ -102,13 +103,38 @@ public sealed class UploadEndpointsTests
         Assert.Equal(HttpStatusCode.OK, completed.StatusCode);
         var first = await completed.Content.ReadFromJsonAsync<CompleteUploadResponse>();
         Assert.NotNull(first);
-        Assert.Equal("pending", first.PublicationState);
+        Assert.Equal("succeeded", first.PublicationState);
 
         var duplicate = await client.PostAsJsonAsync("/api/uploads/complete", new CompleteUploadRequest(session.Token));
         var second = await duplicate.Content.ReadFromJsonAsync<CompleteUploadResponse>();
         Assert.Equal(HttpStatusCode.OK, duplicate.StatusCode);
         Assert.Equal(first, second);
         Assert.Equal(3, factory.Storage.StatCalls);
+    }
+
+    [Fact]
+    public async Task CompletePublishesOnceRetriesFailureAndDoesNotDeleteMedia()
+    {
+        await using var factory = new UploadFactory();
+        using var client = factory.CreateClient();
+        var session = await CreateSession(factory);
+        await client.PostAsJsonAsync("/api/uploads/prepare", new PrepareUploadRequest(session.Token, "a.png", "image/png", 10));
+        factory.Storage.Stored = new StoredObjectInfo(factory.Storage.LastObjectId!, 10, "image/png");
+        factory.Publisher.Fail = true;
+
+        var failed = await client.PostAsJsonAsync("/api/uploads/complete", new CompleteUploadRequest(session.Token));
+        Assert.Equal(HttpStatusCode.OK, failed.StatusCode);
+        Assert.Equal("failed", (await failed.Content.ReadFromJsonAsync<CompleteUploadResponse>())!.PublicationState);
+        Assert.NotNull(factory.Storage.Stored);
+        Assert.Equal(1, factory.Publisher.Calls);
+
+        factory.Publisher.Fail = false;
+        var retried = await client.PostAsJsonAsync("/api/uploads/complete", new CompleteUploadRequest(session.Token));
+        Assert.Equal("succeeded", (await retried.Content.ReadFromJsonAsync<CompleteUploadResponse>())!.PublicationState);
+        var duplicate = await client.PostAsJsonAsync("/api/uploads/complete", new CompleteUploadRequest(session.Token));
+        Assert.Equal("succeeded", (await duplicate.Content.ReadFromJsonAsync<CompleteUploadResponse>())!.PublicationState);
+        Assert.Equal(2, factory.Publisher.Calls);
+        Assert.Equal((1UL, 2UL, $"https://app.test/u/{session.Token}"), factory.Publisher.LastCall);
     }
 
     private static Task<CreatedUploadSession> CreateSession(UploadFactory factory) =>
@@ -124,6 +150,7 @@ public sealed class UploadEndpointsTests
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Discord:Token"] = "test", ["Discord:ApplicationId"] = "123",
+                ["Discord:Enabled"] = "false",
                 ["Minio:Endpoint"] = "localhost:9000", ["Minio:PublicEndpoint"] = "localhost:9000",
                 ["Minio:AccessKey"] = "test", ["Minio:SecretKey"] = "test",
                 ["PublicUrls:MediaBaseUrl"] = "https://media.test", ["PublicUrls:AppBaseUrl"] = "https://app.test",
@@ -133,8 +160,24 @@ public sealed class UploadEndpointsTests
             {
                 services.RemoveAll<IMediaStorage>();
                 services.AddSingleton<IMediaStorage>(Storage);
+                services.RemoveAll<IMediaPublisher>();
+                services.AddSingleton<IMediaPublisher>(Publisher);
                 services.AddSingleton<TimeProvider>(Clock);
             });
+        }
+        public FakeMediaPublisher Publisher { get; } = new();
+    }
+
+    private sealed class FakeMediaPublisher : IMediaPublisher
+    {
+        public bool Fail { get; set; }
+        public int Calls { get; private set; }
+        public (ulong GuildId, ulong ChannelId, string Url)? LastCall { get; private set; }
+        public Task<bool> PublishAsync(ulong guildId, ulong channelId, string publicUrl, CancellationToken ct)
+        {
+            Calls++;
+            LastCall = (guildId, channelId, publicUrl);
+            return Task.FromResult(!Fail);
         }
     }
 

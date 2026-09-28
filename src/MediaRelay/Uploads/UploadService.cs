@@ -1,5 +1,6 @@
 using MediaRelay.Options;
 using MediaRelay.Storage;
+using MediaRelay.Discord;
 using Microsoft.Extensions.Options;
 
 namespace MediaRelay.Uploads;
@@ -9,7 +10,10 @@ public sealed class UploadService(
     MediaValidator validator,
     ObjectIdGenerator objectIds,
     IMediaStorage storage,
-    IOptions<UploadOptions> options)
+    IOptions<UploadOptions> options,
+    IMediaPublisher publisher,
+    IOptions<PublicUrlOptions> publicUrls,
+    ILogger<UploadService> logger)
 {
     public async Task<UploadOperationResult> PrepareAsync(PrepareUploadRequest request, CancellationToken ct)
     {
@@ -47,32 +51,60 @@ public sealed class UploadService(
     {
         var session = await sessions.FindAsync(token, ct);
         if (session is null) return UploadOperationResult.Error(401, "invalid_session", "The upload session is invalid or expired.");
-        if (session.State == UploadSessionState.Completed && session.ObjectId is not null && session.Media is not null)
-            return Completed(session);
-        if (session.State != UploadSessionState.Preparing || session.ObjectId is null || session.Media is null)
-            return UploadOperationResult.Error(409, "not_prepared", "The upload session has not been prepared.");
-
-        StoredObjectInfo? stored;
-        try { stored = await storage.StatAsync(session.ObjectId, ct); }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        if (session.State != UploadSessionState.Completed)
         {
-            return UploadOperationResult.Error(503, "storage_unavailable", "Upload storage is temporarily unavailable.");
+            if (session.State != UploadSessionState.Preparing || session.ObjectId is null || session.Media is null)
+                return UploadOperationResult.Error(409, "not_prepared", "The upload session has not been prepared.");
+
+            StoredObjectInfo? stored;
+            try { stored = await storage.StatAsync(session.ObjectId, ct); }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                logger.LogWarning(exception, "Upload storage verification failed for session {SessionId}", session.SessionId);
+                return UploadOperationResult.Error(503, "storage_unavailable", "Upload storage is temporarily unavailable.");
+            }
+            if (stored is null) return UploadOperationResult.Error(409, "object_missing", "The uploaded object was not found.");
+            if (stored.Size <= 0 || stored.Size > options.Value.MaxUploadSize)
+                return UploadOperationResult.Error(413, "size_exceeded", "The stored object size is outside the allowed range.");
+
+            var media = session.Media;
+            if (!string.Equals(stored.ObjectId, session.ObjectId, StringComparison.Ordinal) ||
+                !string.Equals(stored.ContentType, media.ContentType, StringComparison.OrdinalIgnoreCase))
+                return UploadOperationResult.Error(422, "metadata_mismatch", "Stored object metadata does not match the prepared media type.");
+
+            var transition = await sessions.RecordVerifiedCompletionAsync(token, stored.ObjectId, media, ct);
+            if (!transition.Succeeded || transition.Session is null)
+                return UploadOperationResult.Error(409, "completion_conflict", "The upload session could not be completed.");
+            session = transition.Session;
         }
-        if (stored is null) return UploadOperationResult.Error(409, "object_missing", "The uploaded object was not found.");
-        if (stored.Size <= 0 || stored.Size > options.Value.MaxUploadSize)
-            return UploadOperationResult.Error(413, "size_exceeded", "The stored object size is outside the allowed range.");
 
-        var media = session.Media;
-        if (!string.Equals(stored.ObjectId, session.ObjectId, StringComparison.Ordinal) ||
-            !string.Equals(stored.ContentType, media.ContentType, StringComparison.OrdinalIgnoreCase))
-            return UploadOperationResult.Error(422, "metadata_mismatch", "Stored object metadata does not match the prepared media type.");
+        var claim = await sessions.MarkPublicationPendingAsync(token, ct);
+        if (!claim.Succeeded)
+        {
+            var latest = await sessions.FindAsync(token, ct) ?? session;
+            if (claim.IsInProgress || latest.PublicationStatus == PublicationStatus.Succeeded)
+                return Completed(latest);
+            return Completed(latest);
+        }
 
-        var transition = await sessions.RecordVerifiedCompletionAsync(token, stored.ObjectId, media, ct);
-        if (!transition.Succeeded || transition.Session is null)
-            return UploadOperationResult.Error(409, "completion_conflict", "The upload session could not be completed.");
-        if (!transition.WasAlreadyApplied)
-            await sessions.MarkPublicationPendingAsync(token, ct);
-        return Completed(transition.Session with { PublicationStatus = transition.WasAlreadyApplied ? transition.Session.PublicationStatus : PublicationStatus.Pending });
+        var publicUrl = $"{publicUrls.Value.AppBaseUrl.TrimEnd('/')}/u/{token}";
+        bool published;
+        try { published = await publisher.PublishAsync(session.GuildId, session.ChannelId, publicUrl, ct); }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, "Discord publication failed for guild {GuildId}, channel {ChannelId}, session {SessionId}", session.GuildId, session.ChannelId, session.SessionId);
+            published = false;
+        }
+
+        if (published) await sessions.MarkPublicationSucceededAsync(token, CancellationToken.None);
+        else
+        {
+            logger.LogWarning("Discord publication was not completed for guild {GuildId}, channel {ChannelId}, session {SessionId}", session.GuildId, session.ChannelId, session.SessionId);
+            await sessions.MarkPublicationFailedAsync(token, CancellationToken.None);
+        }
+        var completed = await sessions.FindAsync(token, CancellationToken.None) ?? session;
+        return Completed(completed);
     }
 
     private UploadOperationResult Completed(UploadSession session) => UploadOperationResult.Success(

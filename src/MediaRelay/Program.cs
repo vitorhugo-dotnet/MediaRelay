@@ -2,6 +2,9 @@ using MediaRelay.Options;
 using MediaRelay.Health;
 using MediaRelay.Uploads;
 using MediaRelay.Storage;
+using MediaRelay.Discord;
+using Discord.Interactions;
+using Discord.WebSocket;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +14,8 @@ var environmentConfiguration = new Dictionary<string, string?>
     ["Discord:Token"] = builder.Configuration["DISCORD_TOKEN"],
     ["Discord:ApplicationId"] = builder.Configuration["DISCORD_APPLICATION_ID"],
     ["Discord:AllowedGuildIds"] = builder.Configuration["DISCORD_ALLOWED_GUILD_IDS"],
+    ["Discord:Enabled"] = builder.Configuration["DISCORD_ENABLED"],
+    ["Discord:RegisterCommandsPerGuild"] = builder.Configuration["DISCORD_REGISTER_COMMANDS_PER_GUILD"],
     ["Minio:Endpoint"] = builder.Configuration["MINIO_ENDPOINT"],
     ["Minio:PublicEndpoint"] = builder.Configuration["MINIO_PUBLIC_ENDPOINT"],
     ["Minio:Bucket"] = builder.Configuration["MINIO_BUCKET"],
@@ -54,7 +59,14 @@ builder.Services.AddSingleton<UploadSessionService>();
 builder.Services.AddSingleton<MediaValidator>();
 builder.Services.AddSingleton<ObjectIdGenerator>();
 builder.Services.AddSingleton<IMediaStorage, MinioMediaStorage>();
+builder.Services.AddSingleton(_ => new DiscordSocketClient(new DiscordSocketConfig { GatewayIntents = Discord.GatewayIntents.Guilds }));
+builder.Services.AddSingleton(provider => new InteractionService(provider.GetRequiredService<DiscordSocketClient>().Rest));
+builder.Services.AddSingleton<InteractionHandler>();
+builder.Services.AddSingleton<DiscordBotService>();
+builder.Services.AddSingleton<IDiscordChannelTransport, DiscordChannelTransport>();
+builder.Services.AddSingleton<IMediaPublisher, DiscordMediaPublisher>();
 builder.Services.AddSingleton<UploadService>();
+builder.Services.AddHostedService<DiscordBotWorker>();
 
 var app = builder.Build();
 app.UseExceptionHandler();

@@ -13,4 +13,8 @@ public sealed class DiscordOptions
     public ulong ApplicationId { get; set; }
 
     public string AllowedGuildIds { get; set; } = string.Empty;
+
+    public bool Enabled { get; set; } = true;
+
+    public bool RegisterCommandsPerGuild { get; set; }
 }
