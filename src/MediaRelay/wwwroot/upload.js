@@ -22,22 +22,23 @@
   }
 
   function selected(file) {
-    if (!file) return;
+    if (!file) return false;
     const dot = file.name.lastIndexOf(".");
     const extension = dot >= 0 ? file.name.slice(dot).toLowerCase() : "";
     if (!allowed.has(extension) || file.type.toLowerCase() !== allowed.get(extension)) {
       showMessage("Choose a PNG, JPEG, GIF, WebP or MP4 file.", true);
       input.value = "";
-      return;
+      return false;
     }
     if (file.size <= 0 || file.size > maxBytes) {
       showMessage(`This file must be smaller than ${formatBytes(maxBytes)}.`, true);
       input.value = "";
-      return;
+      return false;
     }
     document.querySelector("#file-name").textContent = `${file.name} · ${formatBytes(file.size)}`;
     result.hidden = true;
     status.hidden = true;
+    return true;
   }
 
   function formatBytes(bytes) {
@@ -91,9 +92,10 @@
   dropZone.addEventListener("drop", event => {
     const file = event.dataTransfer.files[0];
     if (!file) return;
-    try { input.files = event.dataTransfer.files; } catch { /* Selection still works through the dropped File. */ }
+    droppedFile = null;
+    if (!selected(file)) return;
+    try { input.files = event.dataTransfer.files; } catch { /* Submission uses the retained dropped File. */ }
     droppedFile = file;
-    selected(file);
   });
 
   form.addEventListener("submit", async event => {

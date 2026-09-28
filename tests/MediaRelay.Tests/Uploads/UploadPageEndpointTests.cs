@@ -45,6 +45,8 @@ public sealed class UploadPageEndpointTests
         Assert.Contains("/api/uploads/complete", javascript);
         Assert.Contains("xhr.open(\"POST\", authorization.url)", javascript);
         Assert.Contains("data.append(\"file\", file", javascript);
+        Assert.Contains("if (!selected(file)) return;", javascript);
+        Assert.Contains("droppedFile = null;\n    if (!selected(file)) return;", javascript);
         Assert.Contains("progress", javascript, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("upload.css", html);
         Assert.Contains("upload.js", html);
