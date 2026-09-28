@@ -179,9 +179,9 @@
 
 - [ ] Test command response is ephemeral, points to `/u/{token}`, rejects a disallowed guild, and creates session with the invoking guild/channel/user IDs.
 - [ ] Test publisher targets the original channel and posts one canonical URL; fake Discord client failure returns a failed result without deleting stored media.
-- [ ] Test retry after a failed publication can succeed and retry after known success cannot create a duplicate post.
-- [ ] Implement hosted Discord.Net lifecycle with clean login/start/stop/disposal, interaction command registration, development guild scope, production global or configured guild scope, and allowed guild filtering.
-- [ ] Integrate browser completion with `IMediaPublisher`; preserve stored object and session state on Discord failure; log structured identifiers but never token, secret, or presigned URL.
+- [ ] Test retry after a failed publication can succeed and retry after known success cannot create a duplicate post. Test an ambiguous send accepted by Discord but reported as failed; retry must find the bot-authored URL in recent channel history and avoid a second send.
+- [ ] Implement hosted Discord.Net lifecycle with clean login/start/stop/disposal, interaction command registration, development guild scope, production global or configured guild scope, allowed guild filtering, and fail-fast validation that the authenticated Discord application ID matches `DISCORD_APPLICATION_ID`. When bot mode is disabled, allow missing Discord credentials; enabled mode must still validate them.
+- [ ] Integrate browser completion with `IMediaPublisher`; preserve stored object and session state on Discord failure; log structured identifiers but never token, secret, or presigned URL. Before retrying an uncertain send, search recent bot-authored messages in the original channel for the exact URL; treat a match as already published and do not send again. If channel history cannot be checked, do not blindly resend.
 - [ ] Run focused Discord and upload completion tests without making a real Discord connection.
 - [ ] Commit as `feat: add Discord upload command and publication`.
 
@@ -286,6 +286,7 @@
 - Health, structured logging, ProblemDetails, secrets and Docker health: Tasks 1, 5, 6, 8–10.
 - CI tests/build/image labels/tags, PR isolation, manual deployment, SSH to VPS and GH repository metadata: Tasks 9–11.
 - No database/migration path, no alternative storage providers, no frontend build, and no deferred features are added.
+
 
 
 
