@@ -7,7 +7,7 @@ services:
       ASPNETCORE_HTTP_PORTS: "8080"
       DISCORD_ENABLED: ${DISCORD_ENABLED:-true}
       DISCORD_TOKEN: ${DISCORD_TOKEN:-}
-      DISCORD_APPLICATION_ID: ${DISCORD_APPLICATION_ID:-}
+      DISCORD_APPLICATION_ID: ${DISCORD_APPLICATION_ID:-0}
       DISCORD_ALLOWED_GUILD_IDS: ${DISCORD_ALLOWED_GUILD_IDS:-}
       MINIO_ENDPOINT: minio:9000
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:?Set MINIO_PUBLIC_ENDPOINT to the public media host}
@@ -36,8 +36,8 @@ services:
   minio:
     image: media-relay-minio:community-9e49d5e
     build:
-      context: ..
-      dockerfile: deploy/minio-community.Dockerfile
+      context: .
+      dockerfile: minio-community.Dockerfile
     command: ["server", "/data", "--console-address", ":9001"]
     restart: unless-stopped
     environment:

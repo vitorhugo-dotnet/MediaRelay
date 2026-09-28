@@ -12,10 +12,10 @@ MediaRelay builds its MinIO Community image locally from the pinned upstream sou
 cp .env.example .env
 # Replace the example credentials in .env before starting the stack.
 docker build -t media-relay:local .
-docker compose --env-file .env -f deploy/docker-compose.prod.yml up -d
+docker compose --env-file .env -f deploy/docker-compose.prod.yml up -d --build
 ```
 
-The example `.env` already selects `IMAGE=media-relay:local`. For production, use an immutable `ghcr.io/vitorhugo-dotnet/media-relay:sha-<40-character-commit-sha>` image tag.
+The example `.env` already selects `IMAGE=media-relay:local`. The Compose command builds MinIO Community from the pinned source commit. For production, use an immutable `ghcr.io/vitorhugo-dotnet/media-relay:sha-<40-character-commit-sha>` image tag.
 
 The app health endpoint is `http://localhost:8080/health`; the MinIO S3 API is on `http://localhost:9000`. The MinIO console is not published to the host. Stop the stack with `docker compose --env-file .env -f deploy/docker-compose.prod.yml down`. The named `minio-data` volume remains when containers are recreated; `down -v` deletes it.
 

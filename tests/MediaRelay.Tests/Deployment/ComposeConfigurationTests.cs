@@ -38,7 +38,10 @@ public sealed class ComposeConfigurationTests
         var app = services.GetProperty("app");
 
         Assert.Equal("media-relay-minio:community-9e49d5e", minio.GetProperty("image").GetString());
-        Assert.Equal("deploy/minio-community.Dockerfile", minio.GetProperty("build").GetProperty("dockerfile").GetString());
+        var minioBuild = minio.GetProperty("build");
+        Assert.Equal(Path.GetFullPath(Path.Combine(repositoryRoot, "deploy")), minioBuild.GetProperty("context").GetString());
+        Assert.Equal("minio-community.Dockerfile", minioBuild.GetProperty("dockerfile").GetString());
+        Assert.Equal("0", app.GetProperty("environment").GetProperty("DISCORD_APPLICATION_ID").GetString());
         Assert.Contains(minio.GetProperty("volumes").EnumerateArray(), mount =>
             mount.GetProperty("type").GetString() == "volume" && mount.GetProperty("source").GetString() == "minio-data");
         Assert.DoesNotContain(minio.GetProperty("ports").EnumerateArray(), port =>
@@ -70,7 +73,7 @@ public sealed class ComposeConfigurationTests
         startInfo.Environment["MINIO_SECRET_KEY"] = "test-app-password-long-enough";
         startInfo.Environment["DISCORD_ENABLED"] = "false";
         startInfo.Environment["DISCORD_TOKEN"] = "test-discord-token";
-        startInfo.Environment["DISCORD_APPLICATION_ID"] = "123456789012345678";
+        startInfo.Environment.Remove("DISCORD_APPLICATION_ID");
         startInfo.Environment["DISCORD_ALLOWED_GUILD_IDS"] = "";
         startInfo.Environment["PUBLIC_MEDIA_BASE_URL"] = "https://media.example.test";
         startInfo.Environment["PUBLIC_APP_BASE_URL"] = "https://upload.example.test";
