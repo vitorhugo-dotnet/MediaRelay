@@ -36,9 +36,13 @@ public sealed class UploadModule(UploadSessionService sessions, IOptions<PublicU
         await responder.RespondWithUploadLinkAsync($"{baseUrl}/u/{created.Token}", created.Token, true, ct);
     }
 
-    private bool IsAllowedGuild(ulong guildId) => discordOptions.Value.AllowedGuildIds
-        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-        .Any(value => ulong.TryParse(value, out var allowed) && allowed == guildId);
+    private bool IsAllowedGuild(ulong guildId)
+    {
+        var allowedGuildIds = discordOptions.Value.AllowedGuildIds
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return allowedGuildIds.Length == 0 || allowedGuildIds
+            .Any(value => ulong.TryParse(value, out var allowed) && allowed == guildId);
+    }
 
     private sealed class DiscordInteractionResponder(SocketInteractionContext context) : IUploadInteractionResponder
     {

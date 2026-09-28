@@ -134,7 +134,7 @@ public sealed class UploadEndpointsTests
         var duplicate = await client.PostAsJsonAsync("/api/uploads/complete", new CompleteUploadRequest(session.Token));
         Assert.Equal("succeeded", (await duplicate.Content.ReadFromJsonAsync<CompleteUploadResponse>())!.PublicationState);
         Assert.Equal(2, factory.Publisher.Calls);
-        Assert.Equal((1UL, 2UL, $"https://app.test/u/{session.Token}"), factory.Publisher.LastCall);
+        Assert.Equal((1UL, 2UL, $"https://media.test/{factory.Storage.LastObjectId}"), factory.Publisher.LastCall);
     }
 
     private static Task<CreatedUploadSession> CreateSession(UploadFactory factory) =>

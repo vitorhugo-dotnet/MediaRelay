@@ -40,6 +40,23 @@ public sealed class UploadModuleTests
         Assert.Null(await sessions.FindAsync("", CancellationToken.None));
     }
 
+    [Fact]
+    public async Task UploadAllowsAnyGuildWhenAllowlistIsEmpty()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var sessions = new UploadSessionService(cache, Microsoft.Extensions.Options.Options.Create(new UploadOptions()));
+        var module = new UploadModule(sessions, Microsoft.Extensions.Options.Options.Create(new PublicUrlOptions { AppBaseUrl = "https://app.test" }), Microsoft.Extensions.Options.Options.Create(new DiscordOptions { AllowedGuildIds = "" }));
+        var responder = new FakeResponder();
+
+        await module.HandleUploadAsync(27, 3, 4, responder, CancellationToken.None);
+
+        Assert.True(responder.Ephemeral);
+        Assert.NotNull(responder.Token);
+        var session = await sessions.FindAsync(responder.Token!, CancellationToken.None);
+        Assert.NotNull(session);
+        Assert.Equal(27UL, session.GuildId);
+    }
+
     private sealed class FakeResponder : IUploadInteractionResponder
     {
         public bool Ephemeral { get; private set; }

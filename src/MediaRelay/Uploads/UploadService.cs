@@ -12,7 +12,6 @@ public sealed class UploadService(
     IMediaStorage storage,
     IOptions<UploadOptions> options,
     IMediaPublisher publisher,
-    IOptions<PublicUrlOptions> publicUrls,
     ILogger<UploadService> logger)
 {
     public async Task<UploadOperationResult> PrepareAsync(PrepareUploadRequest request, CancellationToken ct)
@@ -87,7 +86,7 @@ public sealed class UploadService(
             return Completed(latest);
         }
 
-        var publicUrl = $"{publicUrls.Value.AppBaseUrl.TrimEnd('/')}/u/{token}";
+        var publicUrl = storage.GetPublicUrl(session.ObjectId!);
         bool published;
         try { published = await publisher.PublishAsync(session.GuildId, session.ChannelId, publicUrl, ct); }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
