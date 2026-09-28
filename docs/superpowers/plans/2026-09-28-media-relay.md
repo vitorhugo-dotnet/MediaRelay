@@ -236,12 +236,12 @@
 **Interfaces:**
 - Produces an application container exposing only the ASP.NET Core port, a MinIO service with persistent volume, production environment configuration, and an idempotent VPS deploy script consuming `IMAGE`/Compose environment values.
 
-- [ ] Test Compose configuration parses, MinIO data uses a named persistent volume, MinIO console has no public port, and app health check calls `/health`.
-- [ ] Build a multi-stage .NET 10 Docker image; exclude `.git`, test results, local secrets, and developer files; do not pass secrets as build args.
-- [ ] Implement deployment script to require a SHA-tagged `IMAGE`, check required host-side env/secrets, pull and restart services idempotently, and never print credentials.
-- [ ] Add README local run, MinIO setup, Discord app/bot configuration, ShareX import, production DNS/reverse proxy routing, and GitHub deployment secret/environment instructions.
-- [ ] Run Compose validation and `docker build`; start local stack and verify health and persistent MinIO data across app recreation.
-- [ ] Commit as `build: package MediaRelay for Docker deployment`.
+- [x] Test Compose configuration parses, MinIO data uses a named persistent volume, MinIO console has no public port, and app health check calls `/health`.
+- [x] Build a multi-stage .NET 10 Docker image; exclude `.git`, test results, local secrets, and developer files; do not pass secrets as build args.
+- [x] Implement deployment script to require a SHA-tagged `IMAGE`, check required host-side env/secrets, pull and restart services idempotently, and never print credentials.
+- [x] Add README local run, MinIO setup, Discord app/bot configuration, ShareX import, production DNS/reverse proxy routing, and GitHub deployment secret/environment instructions.
+- [ ] Run Compose validation and `docker build`; start local stack and verify health and persistent MinIO data across app recreation. Compose validation passed; Docker build/live-stack verification is environment-blocked because Docker Desktop Linux daemon is unavailable.
+- [x] Commit as `build: package MediaRelay for Docker deployment`.
 
 ### Task 10: Add CI, image publication, and VPS deployment workflow
 
