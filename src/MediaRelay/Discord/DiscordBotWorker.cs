@@ -5,12 +5,18 @@ using Microsoft.Extensions.Options;
 
 namespace MediaRelay.Discord;
 
-public sealed class DiscordBotWorker(DiscordBotService bot, IOptions<DiscordOptions> options, ILogger<DiscordBotWorker> logger) : IHostedService
+public sealed class DiscordBotWorker(IServiceProvider services, IOptions<DiscordOptions> options, ILogger<DiscordBotWorker> logger) : IHostedService
 {
+    private DiscordBotService? _bot;
+
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (!options.Value.Enabled) return;
-        try { await bot.StartAsync(cancellationToken); }
+        try
+        {
+            _bot = services.GetRequiredService<DiscordBotService>();
+            await _bot.StartAsync(cancellationToken);
+        }
         catch (Exception exception)
         {
             logger.LogCritical(exception, "Discord bot could not start");
@@ -18,7 +24,7 @@ public sealed class DiscordBotWorker(DiscordBotService bot, IOptions<DiscordOpti
         }
     }
 
-    public Task StopAsync(CancellationToken cancellationToken) => bot.StopAsync(cancellationToken);
+    public Task StopAsync(CancellationToken cancellationToken) => _bot?.StopAsync(cancellationToken) ?? Task.CompletedTask;
 }
 
 public sealed class DiscordChannelTransport(DiscordBotService bot) : IDiscordChannelTransport
