@@ -1,6 +1,9 @@
 services:
   app:
-    image: ${IMAGE:?IMAGE must be a SHA-tagged MediaRelay image}
+    image: ${IMAGE:-media-relay:local}
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: mediarelay-app
     restart: unless-stopped
     environment:
@@ -10,7 +13,7 @@ services:
       DISCORD_TOKEN: ${DISCORD_TOKEN:-}
       DISCORD_APPLICATION_ID: ${DISCORD_APPLICATION_ID:-0}
       DISCORD_ALLOWED_GUILD_IDS: ${DISCORD_ALLOWED_GUILD_IDS:-}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT:?Set MINIO_ENDPOINT to the existing MinIO S3 endpoint}
+      MINIO_ENDPOINT: minio:9000
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:?Set MINIO_PUBLIC_ENDPOINT to the public media host}
       MINIO_BUCKET: ${MINIO_BUCKET:-media}
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
@@ -24,9 +27,32 @@ services:
       PRESIGNED_UPLOAD_TTL_MINUTES: ${PRESIGNED_UPLOAD_TTL_MINUTES:-15}
     ports:
       - "127.0.0.1:8080:8080"
+    depends_on:
+      minio:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 30s
+
+  minio:
+    image: media-relay-minio:community-9e49d5e
+    build:
+      context: ./deploy
+      dockerfile: minio-community.Dockerfile
+    container_name: mediarelay-minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${PUBLIC_APP_BASE_URL:?Set PUBLIC_APP_BASE_URL}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "127.0.0.1:9000:9000"
+
+volumes:
+  minio-data:
