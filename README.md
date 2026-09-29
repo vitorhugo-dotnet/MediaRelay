@@ -1,7 +1,7 @@
 # MediaRelay
 
 MediaRelay is a self-hosted ASP.NET Core media uploader. It accepts browser uploads directly into MinIO, authenticated uploads from ShareX, and can publish uploads to Discord.
-
+ 
 ## Run locally
 
 Requirements: .NET 10 SDK, Docker Engine, and Docker Compose.
