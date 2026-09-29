@@ -66,5 +66,9 @@ done
 cd "$project_dir"
 docker compose --env-file "$env_file" -f "$compose_file" config --quiet
 docker compose --env-file "$env_file" -f "$compose_file" pull app
+if docker container inspect mediarelay-app >/dev/null 2>&1; then
+  printf '%s\n' 'Replacing the existing MediaRelay container.'
+  docker rm -f mediarelay-app
+fi
 docker compose --env-file "$env_file" -f "$compose_file" up -d app
 printf 'MediaRelay deployment is running with %s.\n' "$IMAGE"
