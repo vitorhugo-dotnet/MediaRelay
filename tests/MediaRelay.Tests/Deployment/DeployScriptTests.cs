@@ -14,15 +14,18 @@ public sealed class DeployScriptTests
             var result = await RunScript(fixture);
 
             Assert.Equal(0, result.ExitCode);
-            Assert.All(File.ReadAllLines(fixture.DockerLog), call => Assert.StartsWith("compose ", call, StringComparison.Ordinal));
             Assert.Contains("sha-" + new string('a', 40), result.StandardOutput, StringComparison.Ordinal);
             Assert.DoesNotContain(uploadKey, result.StandardOutput + result.StandardError, StringComparison.Ordinal);
             var dockerCalls = File.ReadAllLines(fixture.DockerLog);
-            Assert.Contains(dockerCalls, call => call.EndsWith(" pull app", StringComparison.Ordinal));
-            Assert.Contains(dockerCalls, call => call.EndsWith(" up -d app", StringComparison.Ordinal));
-            Assert.DoesNotContain(dockerCalls, call => call.Contains("minio", StringComparison.OrdinalIgnoreCase));
-            Assert.DoesNotContain(dockerCalls, call => call.Contains("--remove-orphans", StringComparison.Ordinal));
-            Assert.Equal(3, dockerCalls.Length);
+            var composeCalls = dockerCalls.Where(call => call.StartsWith("compose ", StringComparison.Ordinal)).ToArray();
+            Assert.Equal(3, composeCalls.Length);
+            Assert.Contains(composeCalls, call => call.EndsWith(" pull app", StringComparison.Ordinal));
+            Assert.Contains(composeCalls, call => call.EndsWith(" up -d app", StringComparison.Ordinal));
+            Assert.DoesNotContain(composeCalls, call => call.Contains("minio", StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain(composeCalls, call => call.Contains("--remove-orphans", StringComparison.Ordinal));
+            Assert.Equal("container inspect mediarelay-app", dockerCalls[2]);
+            Assert.DoesNotContain("rm -f mediarelay-app", dockerCalls);
+            Assert.Equal(4, dockerCalls.Length);
         }
         finally
         {
@@ -41,7 +44,29 @@ public sealed class DeployScriptTests
 
             Assert.Equal(0, result.ExitCode);
             Assert.Contains(image, result.StandardOutput, StringComparison.Ordinal);
-            Assert.Equal(3, File.ReadAllLines(fixture.DockerLog).Length);
+            Assert.Equal(4, File.ReadAllLines(fixture.DockerLog).Length);
+        }
+        finally
+        {
+            Directory.Delete(fixture.Root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RemovesExistingNamedContainerBeforeStartingReplacement()
+    {
+        var image = $"ghcr.io/vitorhugo-dotnet/media-relay:sha-{new string('b', 40)}";
+        var fixture = CreateFixture($"IMAGE={image}\n" + ValidEnvironment("private-upload-key-for-test"));
+        try
+        {
+            var result = await RunScript(fixture, existingContainer: true);
+
+            Assert.Equal(0, result.ExitCode);
+            var dockerCalls = File.ReadAllLines(fixture.DockerLog);
+            Assert.Equal("container inspect mediarelay-app", dockerCalls[2]);
+            Assert.Equal("rm -f mediarelay-app", dockerCalls[3]);
+            Assert.EndsWith(" up -d app", dockerCalls[4], StringComparison.Ordinal);
+            Assert.Equal(5, dockerCalls.Length);
         }
         finally
         {
@@ -107,7 +132,7 @@ public sealed class DeployScriptTests
         return new Fixture(root, Path.Combine(root, "docker-calls.log"));
     }
 
-    private static async Task<ProcessResult> RunScript(Fixture fixture, string? image = null)
+    private static async Task<ProcessResult> RunScript(Fixture fixture, string? image = null, bool existingContainer = false)
     {
         var startInfo = new ProcessStartInfo(FindBashExecutable())
         {
@@ -116,7 +141,7 @@ public sealed class DeployScriptTests
             UseShellExecute = false
         };
         startInfo.ArgumentList.Add("-c");
-        startInfo.ArgumentList.Add("docker() { printf '%s\\n' \"$*\" >> \"$DOCKER_CALL_LOG\"; }; export -f docker; source \"$1\"");
+        startInfo.ArgumentList.Add("docker() { printf '%s\\n' \"$*\" >> \"$DOCKER_CALL_LOG\"; if [[ \"$*\" == \"container inspect mediarelay-app\" ]]; then [[ \"${DOCKER_EXISTING_CONTAINER:-false}\" == \"true\" ]]; fi; }; export -f docker; source \"$1\"");
         startInfo.ArgumentList.Add("deploy-test");
         startInfo.ArgumentList.Add(Path.Combine(fixture.Root, "deploy", "deploy.sh"));
         if (image is null)
@@ -124,6 +149,7 @@ public sealed class DeployScriptTests
         else
             startInfo.Environment["IMAGE"] = image;
         startInfo.Environment["DOCKER_CALL_LOG"] = fixture.DockerLog;
+        startInfo.Environment["DOCKER_EXISTING_CONTAINER"] = existingContainer ? "true" : "false";
         using var process = Process.Start(startInfo)!;
         var stdout = await process.StandardOutput.ReadToEndAsync();
         var stderr = await process.StandardError.ReadToEndAsync();
