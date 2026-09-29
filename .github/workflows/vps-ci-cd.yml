@@ -132,6 +132,8 @@ jobs:
       INPUTS_DEPLOY: ${{ inputs.deploy }}
       INPUTS_IMAGE_TAG: ${{ inputs.image_tag }}
     steps:
+      - name: Check out deployment files
+        uses: actions/checkout@v4
       - name: Validate image and deployment secrets before SSH
         shell: bash
         run: |
