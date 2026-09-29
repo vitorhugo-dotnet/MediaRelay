@@ -41,7 +41,7 @@ Create DNS records for the app and media hosts and configure the VPS reverse pro
 The deployment workflow uses the protected GitHub Actions environment named `production`. Configure these repository or environment secrets and variables for SSH delivery:
 
 - `VPS_HOST`: VPS hostname or address.
-- `VPS_PORT`: SSH port; set it as a repository variable. Defaults to `22` when omitted.
+- `VPS_PORT`: SSH port; set it as a repository or `production` environment secret or variable. Defaults to `22` when omitted.
 - `VPS_USER`: SSH account with permission to manage the deployment directory and Docker Compose.
 - `VPS_SSH_KEY`: private key for that account.
 - `VPS_DEPLOY_PATH`: absolute path to the MediaRelay deployment directory on the VPS.
