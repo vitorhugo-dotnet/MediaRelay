@@ -6,7 +6,37 @@ namespace MediaRelay.Tests.Deployment;
 public sealed class ComposeConfigurationTests
 {
     [Fact]
-    public async Task ProductionComposeParsesWithPersistentMinioAndPrivateConsole()
+    public async Task DefaultComposeStartsAppAndLocalMinio()
+    {
+        var configuration = await LoadComposeConfiguration("docker-compose.yml");
+        var services = configuration.RootElement.GetProperty("services");
+        var app = services.GetProperty("app");
+        var minio = services.GetProperty("minio");
+
+        Assert.Equal("mediarelay-app", app.GetProperty("container_name").GetString());
+        Assert.Equal("mediarelay-minio", minio.GetProperty("container_name").GetString());
+        Assert.Equal("minio:9000", app.GetProperty("environment").GetProperty("MINIO_ENDPOINT").GetString());
+        Assert.True(app.GetProperty("build").ValueKind != JsonValueKind.Undefined);
+        Assert.True(minio.GetProperty("build").ValueKind != JsonValueKind.Undefined);
+        Assert.Contains(app.GetProperty("depends_on").EnumerateObject(), dependency => dependency.Name == "minio");
+    }
+
+    [Fact]
+    public async Task ProductionComposeUsesExternalMinioAndContainsOnlyApp()
+    {
+        var configuration = await LoadComposeConfiguration(Path.Combine("deploy", "docker-compose.prod.yml"));
+        var services = configuration.RootElement.GetProperty("services");
+        var app = services.GetProperty("app");
+
+        Assert.Single(services.EnumerateObject());
+        Assert.Equal("mediarelay-app", app.GetProperty("container_name").GetString());
+        Assert.Equal("filestorage-minio:9000", app.GetProperty("environment").GetProperty("MINIO_ENDPOINT").GetString());
+        Assert.Equal("ghcr.io/vitorhugo-dotnet/media-relay:sha-0123456789abcdef0123456789abcdef01234567", app.GetProperty("image").GetString());
+        Assert.False(app.TryGetProperty("build", out _));
+        Assert.False(app.TryGetProperty("depends_on", out _));
+    }
+
+    private static async Task<JsonDocument> LoadComposeConfiguration(string composeFile)
     {
         var repositoryRoot = FindRepositoryRoot();
         using var process = new Process
@@ -20,7 +50,7 @@ public sealed class ComposeConfigurationTests
         };
         process.StartInfo.ArgumentList.Add("compose");
         process.StartInfo.ArgumentList.Add("-f");
-        process.StartInfo.ArgumentList.Add(Path.Combine(repositoryRoot, "deploy", "docker-compose.prod.yml"));
+        process.StartInfo.ArgumentList.Add(Path.Combine(repositoryRoot, composeFile));
         process.StartInfo.ArgumentList.Add("config");
         process.StartInfo.ArgumentList.Add("--format");
         process.StartInfo.ArgumentList.Add("json");
@@ -32,23 +62,7 @@ public sealed class ComposeConfigurationTests
         await process.WaitForExitAsync();
 
         Assert.True(process.ExitCode == 0, $"docker compose config failed: {stderr}");
-        using var document = JsonDocument.Parse(stdout);
-        var services = document.RootElement.GetProperty("services");
-        var minio = services.GetProperty("minio");
-        var app = services.GetProperty("app");
-
-        Assert.Equal("media-relay-minio:community-9e49d5e", minio.GetProperty("image").GetString());
-        var minioBuild = minio.GetProperty("build");
-        Assert.Equal(Path.GetFullPath(Path.Combine(repositoryRoot, "deploy")), minioBuild.GetProperty("context").GetString());
-        Assert.Equal("minio-community.Dockerfile", minioBuild.GetProperty("dockerfile").GetString());
-        Assert.Equal("0", app.GetProperty("environment").GetProperty("DISCORD_APPLICATION_ID").GetString());
-        Assert.Contains(minio.GetProperty("volumes").EnumerateArray(), mount =>
-            mount.GetProperty("type").GetString() == "volume" && mount.GetProperty("source").GetString() == "minio-data");
-        Assert.DoesNotContain(minio.GetProperty("ports").EnumerateArray(), port =>
-            port.GetProperty("target").GetInt32() == 9001);
-        Assert.Contains(app.GetProperty("healthcheck").GetProperty("test").EnumerateArray(), value =>
-            value.GetString()!.Contains("/health", StringComparison.Ordinal));
-        Assert.Contains(document.RootElement.GetProperty("volumes").EnumerateObject(), volume => volume.Name == "minio-data");
+        return JsonDocument.Parse(stdout);
     }
 
     private static string FindRepositoryRoot()
@@ -65,6 +79,7 @@ public sealed class ComposeConfigurationTests
     private static void SetComposeTestEnvironment(ProcessStartInfo startInfo)
     {
         startInfo.Environment["IMAGE"] = "ghcr.io/vitorhugo-dotnet/media-relay:sha-0123456789abcdef0123456789abcdef01234567";
+        startInfo.Environment["MINIO_ENDPOINT"] = "filestorage-minio:9000";
         startInfo.Environment["MINIO_ROOT_USER"] = "test-minio-user";
         startInfo.Environment["MINIO_ROOT_PASSWORD"] = "test-minio-password-long-enough";
         startInfo.Environment["MINIO_BUCKET"] = "media";

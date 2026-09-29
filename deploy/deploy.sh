@@ -42,7 +42,7 @@ if [[ ! "$IMAGE" =~ ^ghcr\.io/vitorhugo-dotnet/media-relay:sha-[0-9a-f]{40}$ ]];
 fi
 export IMAGE
 
-required_keys=(MINIO_ROOT_USER MINIO_ROOT_PASSWORD PUBLIC_APP_BASE_URL PUBLIC_MEDIA_BASE_URL MINIO_PUBLIC_ENDPOINT UPLOAD_API_KEY)
+required_keys=(MINIO_ENDPOINT MINIO_ROOT_USER MINIO_ROOT_PASSWORD PUBLIC_APP_BASE_URL PUBLIC_MEDIA_BASE_URL MINIO_PUBLIC_ENDPOINT UPLOAD_API_KEY)
 if [[ "$(read_env_value DISCORD_ENABLED | tr '[:upper:]' '[:lower:]')" != "false" ]]; then
   required_keys+=(DISCORD_TOKEN DISCORD_APPLICATION_ID)
 fi
@@ -62,6 +62,5 @@ done
 cd "$project_dir"
 docker compose --env-file "$env_file" -f "$compose_file" config --quiet
 docker compose --env-file "$env_file" -f "$compose_file" pull app
-docker compose --env-file "$env_file" -f "$compose_file" build minio
-docker compose --env-file "$env_file" -f "$compose_file" up -d --remove-orphans
+docker compose --env-file "$env_file" -f "$compose_file" up -d app
 printf 'MediaRelay deployment is running with %s.\n' "$IMAGE"

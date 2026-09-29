@@ -6,18 +6,17 @@ MediaRelay is a self-hosted ASP.NET Core media uploader. It accepts browser uplo
 
 Requirements: .NET 10 SDK, Docker Engine, and Docker Compose.
 
-MediaRelay builds its MinIO Community image locally from the pinned upstream source commit `9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a` (release `RELEASE.2025-10-15T17-29-55Z`). Community is distributed as source; the Compose deployment and CI test job compile this source into `media-relay-minio:community-9e49d5e`. The MinIO repository is archived, so this image does not receive upstream Community security updates. Review and update the pinned source deliberately if you maintain this deployment.
+The local Compose stack builds its MinIO Community image from the pinned upstream source commit `9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a` (release `RELEASE.2025-10-15T17-29-55Z`), as does the CI test job. Community is distributed as source. The MinIO repository is archived, so this image does not receive upstream Community security updates. Review and update the pinned source deliberately if you maintain this deployment.
 
 ```sh
 cp .env.example .env
-# Replace the example credentials in .env before starting the stack.
-docker build -t media-relay:local .
-docker compose --env-file .env -f deploy/docker-compose.prod.yml up -d --build
+# Replace example credentials and URLs in .env before starting the local stack.
+docker compose -f docker-compose.yml up -d --build
 ```
 
-The example `.env` already selects `IMAGE=media-relay:local`. The Compose command builds MinIO Community from the pinned source commit. For production, use an immutable `ghcr.io/vitorhugo-dotnet/media-relay:sha-<40-character-commit-sha>` image tag.
+The `.env.example` sets `COMPOSE_FILE=deploy/docker-compose.prod.yml`, so plain `docker compose up` selects the production app-only configuration without merging Compose files. The local command above explicitly selects `docker-compose.yml`, which starts the app and MinIO together and builds both images. For production, set `IMAGE` to an immutable `ghcr.io/vitorhugo-dotnet/media-relay:sha-<40-character-commit-sha>` tag and configure `MINIO_ENDPOINT` for the existing MinIO service.
 
-The app health endpoint is `http://localhost:8080/health`; the MinIO S3 API is on `http://localhost:9000`. The MinIO console is not published to the host. Stop the stack with `docker compose --env-file .env -f deploy/docker-compose.prod.yml down`. The named `minio-data` volume remains when containers are recreated; `down -v` deletes it.
+The local app health endpoint is `http://localhost:8080/health`; the local MinIO S3 API is on `http://localhost:9000`. The MinIO console is not published to the host. Stop the local stack with `docker compose -f docker-compose.yml down`. The named `minio-data` volume remains when containers are recreated; `down -v` deletes it.
 
 The compose stack binds the app and MinIO API to loopback. A reverse proxy on the VPS should route the public app host to `127.0.0.1:8080` and the media host to `127.0.0.1:9000`, with HTTPS enabled. Configure the `PUBLIC_APP_BASE_URL` and `PUBLIC_MEDIA_BASE_URL` values to those HTTPS origins. Set `MINIO_PUBLIC_ENDPOINT` to the media hostname (without a scheme); it is used to construct browser presigned upload requests.
 
@@ -37,7 +36,7 @@ Import [`sharex/MediaRelay.sxcu`](sharex/MediaRelay.sxcu) into ShareX, then ente
 
 ## Production deployment
 
-Create DNS records for the app and media hosts and configure the VPS reverse proxy as described above. Keep the MinIO console private. The proxy must preserve the URL path and forward requests to the corresponding loopback port. Allow uploads up to `MAX_UPLOAD_SIZE` in any proxy body-size limit.
+Create DNS records for the app and media hosts and configure the VPS reverse proxy as described above. Keep the MinIO console private. The proxy must preserve the URL path and forward requests to the corresponding app or existing MinIO endpoint. Allow uploads up to `MAX_UPLOAD_SIZE` in any proxy body-size limit.
 
 The deployment workflow uses the protected GitHub Actions environment named `production`. Configure these repository or environment secrets and variables for SSH delivery:
 
@@ -49,11 +48,11 @@ The deployment workflow uses the protected GitHub Actions environment named `pro
 
 The workflow uses `StrictHostKeyChecking=no` for the deployment SSH connection, so a separate host-key secret is not required.
 
-Create `.env` in that directory before deploying. It must include `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `PUBLIC_APP_BASE_URL`, `PUBLIC_MEDIA_BASE_URL`, `MINIO_PUBLIC_ENDPOINT`, and `UPLOAD_API_KEY`; also set `DISCORD_TOKEN` and `DISCORD_APPLICATION_ID` when `DISCORD_ENABLED` is not `false`. Set `IMAGE` to `ghcr.io/vitorhugo-dotnet/media-relay:sha-<40-character-commit-sha>` for manual deployments. The `deploy/deploy.sh` script checks the immutable image reference and required values before pulling or restarting services; it does not print secret values.
+Create `.env` in that directory before deploying. It must include `MINIO_ENDPOINT` (for example, `filestorage-minio:9000`), `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `PUBLIC_APP_BASE_URL`, `PUBLIC_MEDIA_BASE_URL`, `MINIO_PUBLIC_ENDPOINT`, and `UPLOAD_API_KEY`; also set `DISCORD_TOKEN` and `DISCORD_APPLICATION_ID` when `DISCORD_ENABLED` is not `false`. Set `IMAGE` to `ghcr.io/vitorhugo-dotnet/media-relay:sha-<40-character-commit-sha>` for manual deployments. The `deploy/deploy.sh` script checks the immutable image reference and required values before pulling or restarting only the MediaRelay app; it does not manage the existing MinIO container or print secret values.
 
-The Compose file exposes only loopback ports for the app and MinIO API, keeps the console unbound, and stores MinIO data in a named volume. Back up that volume using your VPS's normal storage backup process.
+The local Compose file exposes only loopback ports for the app and MinIO API, keeps the console unbound, and stores MinIO data in a named volume. Production Compose exposes only the MediaRelay app; the existing MinIO service remains independently managed. Back up MinIO using the storage service's normal backup process.
 
-GitHub Actions runs the .NET restore/build/test checks and a Docker build for pull requests without GHCR login or production secrets. A successful push to `main` publishes `ghcr.io/vitorhugo-dotnet/media-relay:sha-<commit-sha>` and `:latest`, then deploys the SHA-tagged image through the protected `production` environment. The workflow transfers `deploy/docker-compose.prod.yml`, `deploy/deploy.sh`, and `deploy/minio-community.Dockerfile`; the VPS builds the pinned MinIO source image during deployment. Keep the production `.env` on the VPS.
+GitHub Actions runs the .NET restore/build/test checks and a Docker build for pull requests without GHCR login or production secrets. A successful push to `main` publishes `ghcr.io/vitorhugo-dotnet/media-relay:sha-<commit-sha>` and `:latest`, then deploys the SHA-tagged image through the protected `production` environment. The workflow transfers only `deploy/docker-compose.prod.yml` and `deploy/deploy.sh`; it does not build or manage MinIO during deployment. Keep the production `.env` on the VPS.
 
 Set the GHCR package visibility to **Public** so the VPS can pull images without a registry credential. The deployment script intentionally uses the VPS's existing Docker login state and does not transfer a registry token.
 
