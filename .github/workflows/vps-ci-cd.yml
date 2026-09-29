@@ -170,9 +170,9 @@ jobs:
           set -euo pipefail
           remote_path_b64="$(printf '%s' "$VPS_DEPLOY_PATH" | base64 -w 0)"
           remote="$(printf '%s' "$VPS_USER")@$(printf '%s' "$VPS_HOST")"
-          ssh -p "$VPS_PORT" -o StrictHostKeyChecking=no "$remote" "path=\$(printf '%s' '$remote_path_b64' | base64 -d); mkdir -p \"\$path/deploy\""
-          tar -C deploy -czf - docker-compose.prod.yml deploy.sh | ssh -p "$VPS_PORT" -o StrictHostKeyChecking=no "$remote" "path=\$(printf '%s' '$remote_path_b64' | base64 -d); tar -xzf - -C \"\$path/deploy\""
-          ssh -p "$VPS_PORT" -o StrictHostKeyChecking=no "$remote" "path=\$(printf '%s' '$remote_path_b64' | base64 -d); chmod 700 \"\$path/deploy/deploy.sh\""
+          ssh -p "$VPS_PORT" -o StrictHostKeyChecking=no "$remote" "path=\$(printf '%s' '$remote_path_b64' | base64 -d); mkdir -p \"\$path\""
+          tar -C deploy -czf - docker-compose.prod.yml deploy.sh | ssh -p "$VPS_PORT" -o StrictHostKeyChecking=no "$remote" "path=\$(printf '%s' '$remote_path_b64' | base64 -d); tar -xzf - -C \"\$path\""
+          ssh -p "$VPS_PORT" -o StrictHostKeyChecking=no "$remote" "set -e; path=\$(printf '%s' '$remote_path_b64' | base64 -d); chmod 700 \"\$path/deploy.sh\"; if [ -f \"\$path/.env\" ]; then sed -i 's|^COMPOSE_FILE=deploy/docker-compose.prod.yml\$|COMPOSE_FILE=docker-compose.prod.yml|' \"\$path/.env\"; fi; if [ -d \"\$path/deploy\" ]; then rm -f -- \"\$path/deploy/deploy.sh\" \"\$path/deploy/docker-compose.prod.yml\"; rmdir -- \"\$path/deploy\"; fi"
       - name: Restart services with the selected immutable image
         shell: bash
         run: |
@@ -180,4 +180,4 @@ jobs:
           remote_path_b64="$(printf '%s' "$VPS_DEPLOY_PATH" | base64 -w 0)"
           remote="$(printf '%s' "$VPS_USER")@$(printf '%s' "$VPS_HOST")"
           image_b64="$(printf '%s' "$IMAGE" | base64 -w 0)"
-          ssh -p "$VPS_PORT" -o StrictHostKeyChecking=no "$remote" "path=\$(printf '%s' '$remote_path_b64' | base64 -d); image=\$(printf '%s' '$image_b64' | base64 -d); cd \"\$path\"; IMAGE=\"\$image\" ./deploy/deploy.sh"
+          ssh -p "$VPS_PORT" -o StrictHostKeyChecking=no "$remote" "path=\$(printf '%s' '$remote_path_b64' | base64 -d); image=\$(printf '%s' '$image_b64' | base64 -d); cd \"\$path\"; IMAGE=\"\$image\" ./deploy.sh"

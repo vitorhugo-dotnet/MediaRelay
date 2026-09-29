@@ -44,7 +44,7 @@ The deployment workflow uses the protected GitHub Actions environment named `pro
 - `VPS_PORT`: SSH port; set it as a repository or `production` environment secret or variable. Defaults to `22` when omitted.
 - `VPS_USER`: SSH account with permission to manage the deployment directory and Docker Compose.
 - `VPS_SSH_KEY`: private key for that account.
-- `VPS_DEPLOY_PATH`: absolute path to the MediaRelay deployment directory on the VPS.
+- `VPS_DEPLOY_PATH`: absolute path to the MediaRelay directory on the VPS. It contains `.env`, `docker-compose.prod.yml`, and `deploy.sh` at its root.
 
 The workflow uses `StrictHostKeyChecking=no` for the deployment SSH connection, so a separate host-key secret is not required.
 
@@ -52,7 +52,7 @@ Create `.env` in that directory before deploying. It must include `MINIO_ENDPOIN
 
 The local Compose file exposes only loopback ports for the app and MinIO API, keeps the console unbound, and stores MinIO data in a named volume. Production Compose exposes only the MediaRelay app; the existing MinIO service remains independently managed. Back up MinIO using the storage service's normal backup process.
 
-GitHub Actions runs the .NET restore/build/test checks and a Docker build for pull requests without GHCR login or production secrets. A successful push to `main` publishes `ghcr.io/vitorhugo-dotnet/media-relay:sha-<commit-sha>` and `:latest`, then deploys the SHA-tagged image through the protected `production` environment. The workflow transfers only `deploy/docker-compose.prod.yml` and `deploy/deploy.sh`; it does not build or manage MinIO during deployment. Keep the production `.env` on the VPS.
+GitHub Actions runs the .NET restore/build/test checks and a Docker build for pull requests without GHCR login or production secrets. A successful push to `main` publishes `ghcr.io/vitorhugo-dotnet/media-relay:sha-<commit-sha>` and `:latest`, then deploys the SHA-tagged image through the protected `production` environment. The workflow copies `deploy/docker-compose.prod.yml` and `deploy/deploy.sh` directly into the root of `VPS_DEPLOY_PATH`, beside the production `.env`; it does not build or manage MinIO during deployment. Keep the production `.env` on the VPS.
 
 Set the GHCR package visibility to **Public** so the VPS can pull images without a registry credential. The deployment script intentionally uses the VPS's existing Docker login state and does not transfer a registry token.
 

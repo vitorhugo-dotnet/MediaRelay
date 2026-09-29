@@ -2,8 +2,12 @@
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-project_dir="$(cd -- "$script_dir/.." && pwd)"
-compose_file="$script_dir/docker-compose.prod.yml"
+if [[ -f "$script_dir/.env" ]]; then
+  project_dir="$script_dir"
+else
+  project_dir="$(cd -- "$script_dir/.." && pwd)"
+fi
+compose_file="$project_dir/docker-compose.prod.yml"
 env_file="$project_dir/.env"
 
 read_env_value() {
