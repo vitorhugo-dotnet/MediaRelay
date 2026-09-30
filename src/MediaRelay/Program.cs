@@ -16,7 +16,6 @@ var environmentConfiguration = new Dictionary<string, string?>
     ["Discord:ApplicationId"] = builder.Configuration["DISCORD_APPLICATION_ID"],
     ["Discord:AllowedGuildIds"] = builder.Configuration["DISCORD_ALLOWED_GUILD_IDS"],
     ["Discord:Enabled"] = builder.Configuration["DISCORD_ENABLED"],
-    ["Discord:RegisterCommandsPerGuild"] = builder.Configuration["DISCORD_REGISTER_COMMANDS_PER_GUILD"],
     ["Minio:Endpoint"] = builder.Configuration["MINIO_ENDPOINT"],
     ["Minio:PublicEndpoint"] = builder.Configuration["MINIO_PUBLIC_ENDPOINT"],
     ["Minio:Bucket"] = builder.Configuration["MINIO_BUCKET"],

@@ -88,7 +88,7 @@ public sealed class UploadService(
 
         var publicUrl = storage.GetPublicUrl(session.ObjectId!);
         bool published;
-        try { published = await publisher.PublishAsync(session.GuildId, session.ChannelId, publicUrl, ct); }
+        try { published = await publisher.PublishAsync(session.ChannelId, publicUrl, ct); }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
         catch (Exception exception)
         {

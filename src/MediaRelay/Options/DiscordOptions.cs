@@ -14,8 +14,6 @@ public sealed class DiscordOptions : IValidatableObject
 
     public bool Enabled { get; set; } = true;
 
-    public bool RegisterCommandsPerGuild { get; set; }
-
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (!Enabled) yield break;

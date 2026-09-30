@@ -18,7 +18,7 @@ public enum PublicationStatus
 public sealed record UploadSession(
     string TokenHash,
     string SessionId,
-    ulong GuildId,
+    ulong? GuildId,
     ulong ChannelId,
     ulong UserId,
     DateTimeOffset ExpiresAt,

@@ -14,7 +14,6 @@ public sealed class DiscordBotService : IAsyncDisposable
     private readonly DiscordApplicationIdentityVerifier _identityVerifier;
     private readonly IServiceProvider _services;
     private readonly DiscordOptions _options;
-    private readonly IHostEnvironment _environment;
     private readonly ILogger<DiscordBotService> _logger;
 
     public DiscordSocketClient Client => _client;
@@ -22,13 +21,12 @@ public sealed class DiscordBotService : IAsyncDisposable
 
     public DiscordBotService(IServiceProvider services, InteractionHandler handler, DiscordSocketClient client,
         InteractionService interactions, IOptions<DiscordOptions> options,
-        DiscordApplicationIdentityVerifier identityVerifier, IHostEnvironment environment, ILogger<DiscordBotService> logger)
+        DiscordApplicationIdentityVerifier identityVerifier, ILogger<DiscordBotService> logger)
     {
         _services = services;
         _handler = handler;
         _identityVerifier = identityVerifier;
         _options = options.Value;
-        _environment = environment;
         _logger = logger;
         _client = client;
         _interactions = interactions;
@@ -65,14 +63,7 @@ public sealed class DiscordBotService : IAsyncDisposable
         }
 
         var guilds = ParseAllowedGuilds(_options.AllowedGuildIds).ToArray();
-        if (guilds.Length > 0 && (_environment.IsDevelopment() || _options.RegisterCommandsPerGuild))
-        {
-            foreach (var guildId in guilds) await _interactions.RegisterCommandsToGuildAsync(guildId);
-        }
-        else
-        {
-            await _interactions.RegisterCommandsGloballyAsync();
-        }
+        await _interactions.RegisterCommandsGloballyAsync();
         _logger.LogInformation("Discord bot started with {AllowedGuildCount} allowed guilds", guilds.Length);
     }
 

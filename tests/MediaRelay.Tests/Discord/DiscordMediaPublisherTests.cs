@@ -10,10 +10,10 @@ public sealed class DiscordMediaPublisherTests
         var transport = new FakeDiscordChannelTransport();
         var publisher = new DiscordMediaPublisher(transport);
 
-        var result = await publisher.PublishAsync(11, 22, "https://app.test/u/abc", CancellationToken.None);
+        var result = await publisher.PublishAsync(22, "https://app.test/u/abc", CancellationToken.None);
 
         Assert.True(result);
-        Assert.Equal((11UL, 22UL, "https://app.test/u/abc"), (transport.GuildId, transport.ChannelId, transport.Message));
+        Assert.Equal((22UL, "https://app.test/u/abc"), (transport.ChannelId, transport.Message));
     }
 
     [Fact]
@@ -21,7 +21,7 @@ public sealed class DiscordMediaPublisherTests
     {
         var publisher = new DiscordMediaPublisher(new FakeDiscordChannelTransport { Fail = true });
 
-        Assert.False(await publisher.PublishAsync(11, 22, "https://app.test/u/abc", CancellationToken.None));
+        Assert.False(await publisher.PublishAsync(22, "https://app.test/u/abc", CancellationToken.None));
     }
 
     [Fact]
@@ -30,8 +30,8 @@ public sealed class DiscordMediaPublisherTests
         var transport = new FakeDiscordChannelTransport { AcceptThenFail = true };
         var publisher = new DiscordMediaPublisher(transport);
 
-        Assert.False(await publisher.PublishAsync(11, 22, "https://app.test/u/abc", CancellationToken.None));
-        Assert.True(await publisher.PublishAsync(11, 22, "https://app.test/u/abc", CancellationToken.None));
+        Assert.False(await publisher.PublishAsync(22, "https://app.test/u/abc", CancellationToken.None));
+        Assert.True(await publisher.PublishAsync(22, "https://app.test/u/abc", CancellationToken.None));
         Assert.Equal(1, transport.SendCalls);
         Assert.Equal(2, transport.HistoryCalls);
     }
@@ -41,7 +41,7 @@ public sealed class DiscordMediaPublisherTests
     {
         var transport = new FakeDiscordChannelTransport { HistoryFails = true };
 
-        Assert.False(await new DiscordMediaPublisher(transport).PublishAsync(11, 22, "https://app.test/u/abc", CancellationToken.None));
+        Assert.False(await new DiscordMediaPublisher(transport).PublishAsync(22, "https://app.test/u/abc", CancellationToken.None));
         Assert.Equal(0, transport.SendCalls);
     }
 
@@ -53,20 +53,18 @@ public sealed class DiscordMediaPublisherTests
         public int SendCalls { get; private set; }
         public int HistoryCalls { get; private set; }
         private readonly HashSet<string> _acceptedMessages = [];
-        public ulong GuildId { get; private set; }
         public ulong ChannelId { get; private set; }
         public string? Message { get; private set; }
-        public Task<bool> HasRecentBotMessageAsync(ulong guildId, ulong channelId, string message, CancellationToken ct)
+        public Task<bool> HasRecentBotMessageAsync(ulong channelId, string message, CancellationToken ct)
         {
             HistoryCalls++;
             if (HistoryFails) throw new InvalidOperationException("history unavailable");
             return Task.FromResult(_acceptedMessages.Contains(message));
         }
-        public Task SendMessageAsync(ulong guildId, ulong channelId, string message, CancellationToken ct)
+        public Task SendMessageAsync(ulong channelId, string message, CancellationToken ct)
         {
             SendCalls++;
             if (Fail) throw new InvalidOperationException("discord offline");
-            GuildId = guildId;
             ChannelId = channelId;
             Message = message;
             _acceptedMessages.Add(message);

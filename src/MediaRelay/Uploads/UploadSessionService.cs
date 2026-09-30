@@ -11,7 +11,7 @@ public sealed class UploadSessionService(IMemoryCache cache, IOptions<UploadOpti
     private const string CacheKeyPrefix = "upload-session:";
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
-    public Task<CreatedUploadSession> CreateAsync(ulong guildId, ulong channelId, ulong userId, CancellationToken ct)
+    public Task<CreatedUploadSession> CreateAsync(ulong? guildId, ulong channelId, ulong userId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         var now = _timeProvider.GetUtcNow();

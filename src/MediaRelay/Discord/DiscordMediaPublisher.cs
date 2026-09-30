@@ -2,12 +2,12 @@ namespace MediaRelay.Discord;
 
 public sealed class DiscordMediaPublisher(IDiscordChannelTransport transport) : IMediaPublisher
 {
-    public async Task<bool> PublishAsync(ulong guildId, ulong channelId, string publicUrl, CancellationToken ct)
+    public async Task<bool> PublishAsync(ulong channelId, string publicUrl, CancellationToken ct)
     {
         try
         {
-            if (await transport.HasRecentBotMessageAsync(guildId, channelId, publicUrl, ct)) return true;
-            await transport.SendMessageAsync(guildId, channelId, publicUrl, ct);
+            if (await transport.HasRecentBotMessageAsync(channelId, publicUrl, ct)) return true;
+            await transport.SendMessageAsync(channelId, publicUrl, ct);
             return true;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)

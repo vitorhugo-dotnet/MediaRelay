@@ -13,6 +13,7 @@ public interface IUploadInteractionResponder
     Task RespondRejectedAsync(string message, bool ephemeral, CancellationToken ct);
 }
 
+[CommandContextType(InteractionContextType.Guild, InteractionContextType.BotDm)]
 public sealed class UploadModule(UploadSessionService sessions, IOptions<PublicUrlOptions> publicUrls, IOptions<DiscordOptions> discordOptions)
     : InteractionModuleBase<SocketInteractionContext>
 {
@@ -20,10 +21,10 @@ public sealed class UploadModule(UploadSessionService sessions, IOptions<PublicU
     public async Task UploadAsync()
     {
         var responder = new DiscordInteractionResponder(Context);
-        await HandleUploadAsync(Context.Guild.Id, Context.Channel.Id, Context.User.Id, responder, CancellationToken.None);
+        await HandleUploadAsync(Context.Guild?.Id, Context.Channel.Id, Context.User.Id, responder, CancellationToken.None);
     }
 
-    public async Task HandleUploadAsync(ulong guildId, ulong channelId, ulong userId, IUploadInteractionResponder responder, CancellationToken ct)
+    public async Task HandleUploadAsync(ulong? guildId, ulong channelId, ulong userId, IUploadInteractionResponder responder, CancellationToken ct)
     {
         if (!IsAllowedGuild(guildId))
         {
@@ -36,8 +37,10 @@ public sealed class UploadModule(UploadSessionService sessions, IOptions<PublicU
         await responder.RespondWithUploadLinkAsync($"{baseUrl}/u/{created.Token}", created.Token, true, ct);
     }
 
-    private bool IsAllowedGuild(ulong guildId)
+    private bool IsAllowedGuild(ulong? guildId)
     {
+        if (guildId is null) return true;
+
         var allowedGuildIds = discordOptions.Value.AllowedGuildIds
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return allowedGuildIds.Length == 0 || allowedGuildIds

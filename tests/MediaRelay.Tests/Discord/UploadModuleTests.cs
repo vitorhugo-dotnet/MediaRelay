@@ -22,7 +22,7 @@ public sealed class UploadModuleTests
         Assert.StartsWith("https://app.test/base/u/", responder.Url);
         var session = await sessions.FindAsync(responder.Token!, CancellationToken.None);
         Assert.NotNull(session);
-        Assert.Equal((1UL, 2UL, 3UL), (session.GuildId, session.ChannelId, session.UserId));
+        Assert.Equal((1UL, 2UL, 3UL), (session.GuildId!.Value, session.ChannelId, session.UserId));
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public sealed class UploadModuleTests
         Assert.NotNull(responder.Token);
         var session = await sessions.FindAsync(responder.Token!, CancellationToken.None);
         Assert.NotNull(session);
-        Assert.Equal(27UL, session.GuildId);
+        Assert.Equal(27UL, session.GuildId!.Value);
     }
 
     private sealed class FakeResponder : IUploadInteractionResponder

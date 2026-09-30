@@ -29,10 +29,10 @@ public sealed class DiscordBotWorker(IServiceProvider services, IOptions<Discord
 
 public sealed class DiscordChannelTransport(DiscordBotService bot) : IDiscordChannelTransport
 {
-    public async Task<bool> HasRecentBotMessageAsync(ulong guildId, ulong channelId, string message, CancellationToken ct)
+    public async Task<bool> HasRecentBotMessageAsync(ulong channelId, string message, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        var channel = GetChannel(guildId, channelId);
+        var channel = GetChannel(channelId);
         var botUserId = bot.Client.CurrentUser.Id;
         await using var history = channel.GetMessagesAsync(50).GetAsyncEnumerator(ct);
         while (await history.MoveNextAsync())
@@ -43,13 +43,13 @@ public sealed class DiscordChannelTransport(DiscordBotService bot) : IDiscordCha
         return false;
     }
 
-    public async Task SendMessageAsync(ulong guildId, ulong channelId, string message, CancellationToken ct)
+    public async Task SendMessageAsync(ulong channelId, string message, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        var channel = GetChannel(guildId, channelId);
+        var channel = GetChannel(channelId);
         await channel.SendMessageAsync(message);
     }
 
-    private SocketTextChannel GetChannel(ulong guildId, ulong channelId) => bot.Client.GetGuild(guildId)?.GetTextChannel(channelId)
+    private IMessageChannel GetChannel(ulong channelId) => bot.Client.GetChannel(channelId) as IMessageChannel
         ?? throw new InvalidOperationException("The target Discord channel is unavailable.");
 }

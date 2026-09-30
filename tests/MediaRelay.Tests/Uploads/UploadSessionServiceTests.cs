@@ -17,7 +17,7 @@ public sealed class UploadSessionServiceTests
         var found = await service.FindAsync(created.Token, CancellationToken.None);
 
         Assert.Matches("^[A-Za-z0-9_-]{43}$", created.Token);
-        Assert.Equal(1UL, created.Session.GuildId);
+        Assert.Equal(1UL, created.Session.GuildId!.Value);
         Assert.Equal(2UL, created.Session.ChannelId);
         Assert.Equal(3UL, created.Session.UserId);
         Assert.NotNull(found);

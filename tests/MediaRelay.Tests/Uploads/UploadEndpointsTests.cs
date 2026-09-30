@@ -134,7 +134,7 @@ public sealed class UploadEndpointsTests
         var duplicate = await client.PostAsJsonAsync("/api/uploads/complete", new CompleteUploadRequest(session.Token));
         Assert.Equal("succeeded", (await duplicate.Content.ReadFromJsonAsync<CompleteUploadResponse>())!.PublicationState);
         Assert.Equal(2, factory.Publisher.Calls);
-        Assert.Equal((1UL, 2UL, $"https://media.test/{factory.Storage.LastObjectId}"), factory.Publisher.LastCall);
+        Assert.Equal((2UL, $"https://media.test/{factory.Storage.LastObjectId}"), factory.Publisher.LastCall);
     }
 
     private static Task<CreatedUploadSession> CreateSession(UploadFactory factory) =>
@@ -172,11 +172,11 @@ public sealed class UploadEndpointsTests
     {
         public bool Fail { get; set; }
         public int Calls { get; private set; }
-        public (ulong GuildId, ulong ChannelId, string Url)? LastCall { get; private set; }
-        public Task<bool> PublishAsync(ulong guildId, ulong channelId, string publicUrl, CancellationToken ct)
+        public (ulong ChannelId, string Url)? LastCall { get; private set; }
+        public Task<bool> PublishAsync(ulong channelId, string publicUrl, CancellationToken ct)
         {
             Calls++;
-            LastCall = (guildId, channelId, publicUrl);
+            LastCall = (channelId, publicUrl);
             return Task.FromResult(!Fail);
         }
     }
