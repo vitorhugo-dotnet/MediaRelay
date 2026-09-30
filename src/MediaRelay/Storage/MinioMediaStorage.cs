@@ -21,8 +21,8 @@ public sealed class MinioMediaStorage : IMediaStorage
     {
         _minioOptions = minioOptions.Value;
         _mediaBaseUri = new Uri(publicUrlOptions.Value.MediaBaseUrl.TrimEnd('/') + "/", UriKind.Absolute);
-        _client = CreateClient(_minioOptions.Endpoint, _minioOptions);
-        _publicClient = CreateClient(_minioOptions.PublicEndpoint, _minioOptions);
+        _client = CreateClient(_minioOptions.Endpoint, _minioOptions.UseSsl, _minioOptions);
+        _publicClient = CreateClient(_minioOptions.PublicEndpoint, _minioOptions.PublicUseSsl, _minioOptions);
     }
 
     public async Task InitializeAsync(CancellationToken ct)
@@ -132,10 +132,10 @@ public sealed class MinioMediaStorage : IMediaStorage
         return new Uri(_mediaBaseUri, Uri.EscapeDataString(objectId)).AbsoluteUri;
     }
 
-    private static IMinioClient CreateClient(string endpoint, MinioOptions options)
+    private static IMinioClient CreateClient(string endpoint, bool useSsl, MinioOptions options)
     {
         var builder = new MinioClient().WithEndpoint(endpoint).WithCredentials(options.AccessKey, options.SecretKey);
-        if (options.UseSsl)
+        if (useSsl)
         {
             builder = builder.WithSSL();
         }

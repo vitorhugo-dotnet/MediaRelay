@@ -22,6 +22,7 @@ var environmentConfiguration = new Dictionary<string, string?>
     ["Minio:AccessKey"] = builder.Configuration["MINIO_ACCESS_KEY"],
     ["Minio:SecretKey"] = builder.Configuration["MINIO_SECRET_KEY"],
     ["Minio:UseSsl"] = builder.Configuration["MINIO_USE_SSL"],
+    ["Minio:PublicUseSsl"] = builder.Configuration["MINIO_PUBLIC_USE_SSL"],
     ["PublicUrls:MediaBaseUrl"] = builder.Configuration["PUBLIC_MEDIA_BASE_URL"],
     ["PublicUrls:AppBaseUrl"] = builder.Configuration["PUBLIC_APP_BASE_URL"],
     ["Upload:ApiKey"] = builder.Configuration["UPLOAD_API_KEY"],

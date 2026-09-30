@@ -21,4 +21,6 @@ public sealed class MinioOptions
     public string Bucket { get; set; } = "media";
 
     public bool UseSsl { get; set; }
+
+    public bool PublicUseSsl { get; set; } = true;
 }
