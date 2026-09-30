@@ -65,7 +65,7 @@ public sealed class DiscordBotService : IAsyncDisposable
         }
 
         var guilds = ParseAllowedGuilds(_options.AllowedGuildIds).ToArray();
-        if (_environment.IsDevelopment() || _options.RegisterCommandsPerGuild)
+        if (guilds.Length > 0 && (_environment.IsDevelopment() || _options.RegisterCommandsPerGuild))
         {
             foreach (var guildId in guilds) await _interactions.RegisterCommandsToGuildAsync(guildId);
         }
