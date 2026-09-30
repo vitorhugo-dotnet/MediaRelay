@@ -16,6 +16,8 @@ public sealed class ComposeConfigurationTests
         Assert.Equal("mediarelay-app", app.GetProperty("container_name").GetString());
         Assert.Equal("mediarelay-minio", minio.GetProperty("container_name").GetString());
         Assert.Equal("minio:9000", app.GetProperty("environment").GetProperty("MINIO_ENDPOINT").GetString());
+        Assert.Equal("false", app.GetProperty("environment").GetProperty("MINIO_USE_SSL").GetString());
+        Assert.Equal("false", app.GetProperty("environment").GetProperty("MINIO_PUBLIC_USE_SSL").GetString());
         Assert.True(app.GetProperty("build").ValueKind != JsonValueKind.Undefined);
         Assert.True(minio.GetProperty("build").ValueKind != JsonValueKind.Undefined);
         Assert.Contains(app.GetProperty("depends_on").EnumerateObject(), dependency => dependency.Name == "minio");
@@ -31,6 +33,8 @@ public sealed class ComposeConfigurationTests
         Assert.Single(services.EnumerateObject());
         Assert.Equal("mediarelay-app", app.GetProperty("container_name").GetString());
         Assert.Equal("filestorage-minio:9000", app.GetProperty("environment").GetProperty("MINIO_ENDPOINT").GetString());
+        Assert.Equal("false", app.GetProperty("environment").GetProperty("MINIO_USE_SSL").GetString());
+        Assert.Equal("true", app.GetProperty("environment").GetProperty("MINIO_PUBLIC_USE_SSL").GetString());
         Assert.Equal("ghcr.io/vitorhugo-dotnet/media-relay:sha-0123456789abcdef0123456789abcdef01234567", app.GetProperty("image").GetString());
         Assert.False(app.TryGetProperty("build", out _));
         Assert.False(app.TryGetProperty("depends_on", out _));

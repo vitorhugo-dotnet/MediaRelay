@@ -29,7 +29,7 @@ public sealed class MinioMediaStorageTests : IAsyncLifetime
         await _container.StartAsync();
         var endpoint = $"localhost:{_container.GetMappedPublicPort(9000)}";
         _storage = new MinioMediaStorage(
-            Microsoft.Extensions.Options.Options.Create(new MinioOptions { Endpoint = endpoint, PublicEndpoint = endpoint, AccessKey = AccessKey, SecretKey = SecretKey, Bucket = "test-media" }),
+            Microsoft.Extensions.Options.Options.Create(new MinioOptions { Endpoint = endpoint, PublicEndpoint = endpoint, PublicUseSsl = false, AccessKey = AccessKey, SecretKey = SecretKey, Bucket = "test-media" }),
             Microsoft.Extensions.Options.Options.Create(new PublicUrlOptions { MediaBaseUrl = "https://media.example.test", AppBaseUrl = "https://app.example.test" }));
         await _storage.InitializeAsync(CancellationToken.None);
     }
@@ -108,6 +108,5 @@ public sealed class MinioMediaStorageTests : IAsyncLifetime
 
     private static IMinioClient CreateClient(string endpoint) => new MinioClient().WithEndpoint(endpoint).WithCredentials(AccessKey, SecretKey).Build();
 }
-
 
 
