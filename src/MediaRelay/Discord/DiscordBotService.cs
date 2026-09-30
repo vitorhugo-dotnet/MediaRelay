@@ -46,7 +46,24 @@ public sealed class DiscordBotService : IAsyncDisposable
             throw;
         }
         _handler.Attach();
-        await _client.StartAsync();
+        var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task OnReadyAsync()
+        {
+            ready.TrySetResult();
+            return Task.CompletedTask;
+        }
+
+        _client.Ready += OnReadyAsync;
+        try
+        {
+            await _client.StartAsync();
+            await ready.Task.WaitAsync(TimeSpan.FromMinutes(2), ct);
+        }
+        finally
+        {
+            _client.Ready -= OnReadyAsync;
+        }
+
         var guilds = ParseAllowedGuilds(_options.AllowedGuildIds).ToArray();
         if (_environment.IsDevelopment() || _options.RegisterCommandsPerGuild)
         {
