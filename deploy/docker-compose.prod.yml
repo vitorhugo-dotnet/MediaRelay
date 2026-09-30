@@ -22,11 +22,16 @@ services:
       MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-536870912}
       UPLOAD_SESSION_TTL_MINUTES: ${UPLOAD_SESSION_TTL_MINUTES:-30}
       PRESIGNED_UPLOAD_TTL_MINUTES: ${PRESIGNED_UPLOAD_TTL_MINUTES:-15}
-    ports:
-      - "127.0.0.1:8080:8080"
+    networks:
+      - infra_network
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 30s
+
+networks:
+  infra_network:
+    external: true
+    name: infra_network
