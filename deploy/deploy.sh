@@ -37,15 +37,6 @@ if [[ ! -f "$env_file" ]]; then
   exit 2
 fi
 
-if [[ -z "${IMAGE:-}" ]]; then
-  IMAGE="$(read_env_value IMAGE)"
-fi
-if [[ ! "$IMAGE" =~ ^ghcr\.io/vitorhugo-dotnet/media-relay:sha-[0-9a-f]{40}$ ]]; then
-  printf '%s\n' 'Deployment blocked: IMAGE must match ghcr.io/vitorhugo-dotnet/media-relay:sha-<40-character-commit-sha>.' >&2
-  exit 2
-fi
-export IMAGE
-
 required_keys=(MINIO_ENDPOINT MINIO_ROOT_USER MINIO_ROOT_PASSWORD PUBLIC_APP_BASE_URL PUBLIC_MEDIA_BASE_URL MINIO_PUBLIC_ENDPOINT UPLOAD_API_KEY)
 if [[ "$(read_env_value DISCORD_ENABLED | tr '[:upper:]' '[:lower:]')" != "false" ]]; then
   required_keys+=(DISCORD_TOKEN DISCORD_APPLICATION_ID)
@@ -71,4 +62,4 @@ if docker container inspect mediarelay-app >/dev/null 2>&1; then
   docker rm -f mediarelay-app
 fi
 docker compose --env-file "$env_file" -f "$compose_file" up -d app
-printf 'MediaRelay deployment is running with %s.\n' "$IMAGE"
+printf '%s\n' 'MediaRelay deployment is running with ghcr.io/vitorhugo-dotnet/media-relay:latest.'

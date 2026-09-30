@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${IMAGE:?IMAGE must be a SHA-tagged MediaRelay image}
+    image: ghcr.io/vitorhugo-dotnet/media-relay:latest
     container_name: mediarelay-app
     restart: unless-stopped
     environment:

@@ -35,7 +35,7 @@ public sealed class ComposeConfigurationTests
         Assert.Equal("filestorage-minio:9000", app.GetProperty("environment").GetProperty("MINIO_ENDPOINT").GetString());
         Assert.Equal("false", app.GetProperty("environment").GetProperty("MINIO_USE_SSL").GetString());
         Assert.Equal("true", app.GetProperty("environment").GetProperty("MINIO_PUBLIC_USE_SSL").GetString());
-        Assert.Equal("ghcr.io/vitorhugo-dotnet/media-relay:sha-0123456789abcdef0123456789abcdef01234567", app.GetProperty("image").GetString());
+        Assert.Equal("ghcr.io/vitorhugo-dotnet/media-relay:latest", app.GetProperty("image").GetString());
         Assert.False(app.TryGetProperty("build", out _));
         Assert.False(app.TryGetProperty("depends_on", out _));
     }
@@ -82,7 +82,7 @@ public sealed class ComposeConfigurationTests
 
     private static void SetComposeTestEnvironment(ProcessStartInfo startInfo)
     {
-        startInfo.Environment["IMAGE"] = "ghcr.io/vitorhugo-dotnet/media-relay:sha-0123456789abcdef0123456789abcdef01234567";
+        startInfo.Environment.Remove("IMAGE");
         startInfo.Environment["MINIO_ENDPOINT"] = "filestorage-minio:9000";
         startInfo.Environment["MINIO_ROOT_USER"] = "test-minio-user";
         startInfo.Environment["MINIO_ROOT_PASSWORD"] = "test-minio-password-long-enough";

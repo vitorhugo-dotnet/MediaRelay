@@ -5,22 +5,22 @@ namespace MediaRelay.Tests.Deployment;
 public sealed class DeployScriptTests
 {
     [Fact]
-    public async Task UsesShaImageFromEnvFileAndRunsComposeWithoutPrintingCredentials()
+    public async Task PullsLatestWithoutImageVariableBeforeStartingAppWithoutPrintingCredentials()
     {
         const string uploadKey = "private-upload-key-for-test";
-        var fixture = CreateFixture($"IMAGE=ghcr.io/vitorhugo-dotnet/media-relay:sha-{new string('a', 40)}\n" + ValidEnvironment(uploadKey));
+        var fixture = CreateFixture(ValidEnvironment(uploadKey));
         try
         {
             var result = await RunScript(fixture);
 
             Assert.Equal(0, result.ExitCode);
-            Assert.Contains("sha-" + new string('a', 40), result.StandardOutput, StringComparison.Ordinal);
+            Assert.Contains("ghcr.io/vitorhugo-dotnet/media-relay:latest", result.StandardOutput, StringComparison.Ordinal);
             Assert.DoesNotContain(uploadKey, result.StandardOutput + result.StandardError, StringComparison.Ordinal);
             var dockerCalls = File.ReadAllLines(fixture.DockerLog);
             var composeCalls = dockerCalls.Where(call => call.StartsWith("compose ", StringComparison.Ordinal)).ToArray();
             Assert.Equal(3, composeCalls.Length);
-            Assert.Contains(composeCalls, call => call.EndsWith(" pull app", StringComparison.Ordinal));
-            Assert.Contains(composeCalls, call => call.EndsWith(" up -d app", StringComparison.Ordinal));
+            Assert.EndsWith(" pull app", composeCalls[1], StringComparison.Ordinal);
+            Assert.EndsWith(" up -d app", composeCalls[2], StringComparison.Ordinal);
             Assert.DoesNotContain(composeCalls, call => call.Contains("minio", StringComparison.OrdinalIgnoreCase));
             Assert.DoesNotContain(composeCalls, call => call.Contains("--remove-orphans", StringComparison.Ordinal));
             Assert.Equal("container inspect mediarelay-app", dockerCalls[2]);
@@ -34,7 +34,7 @@ public sealed class DeployScriptTests
     }
 
     [Fact]
-    public async Task ProcessEnvironmentShaImageOverridesImageFromEnvFile()
+    public async Task ObsoleteImageVariablesDoNotOverrideLatestFromCompose()
     {
         var image = $"ghcr.io/vitorhugo-dotnet/media-relay:sha-{new string('c', 40)}";
         var fixture = CreateFixture("IMAGE=media-relay:local\n" + ValidEnvironment("private-upload-key-for-test"));
@@ -43,7 +43,8 @@ public sealed class DeployScriptTests
             var result = await RunScript(fixture, image);
 
             Assert.Equal(0, result.ExitCode);
-            Assert.Contains(image, result.StandardOutput, StringComparison.Ordinal);
+            Assert.Contains("ghcr.io/vitorhugo-dotnet/media-relay:latest", result.StandardOutput, StringComparison.Ordinal);
+            Assert.DoesNotContain(image, result.StandardOutput, StringComparison.Ordinal);
             Assert.Equal(4, File.ReadAllLines(fixture.DockerLog).Length);
         }
         finally
@@ -77,17 +78,16 @@ public sealed class DeployScriptTests
     [Theory]
     [InlineData("bad-image")]
     [InlineData("ghcr.io/vitorhugo-dotnet/media-relay:latest")]
-    public async Task RejectsMalformedProcessImageBeforeCallingCompose(string image)
+    public async Task IgnoresObsoleteProcessImageAndRunsCompose(string image)
     {
         var fixture = CreateFixture($"IMAGE=ghcr.io/vitorhugo-dotnet/media-relay:sha-{new string('d', 40)}\n" + ValidEnvironment("private-upload-key-for-test"));
         try
         {
             var result = await RunScript(fixture, image);
 
-            Assert.Equal(2, result.ExitCode);
-            Assert.Contains("IMAGE", result.StandardError, StringComparison.Ordinal);
-            Assert.DoesNotContain(image, result.StandardError, StringComparison.Ordinal);
-            Assert.False(File.Exists(fixture.DockerLog));
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains("ghcr.io/vitorhugo-dotnet/media-relay:latest", result.StandardOutput, StringComparison.Ordinal);
+            Assert.Equal(4, File.ReadAllLines(fixture.DockerLog).Length);
         }
         finally
         {
