@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Preserve the public environment-variable names from the deployment contract.
 var environmentConfiguration = new Dictionary<string, string?>
 {
-    ["Discord:Token"] = builder.Configuration["DISCORD_TOKEN"],
+    ["Discord:Token"] = builder.Configuration["DISCORD_TOKEN"]?.Trim(),
     ["Discord:ApplicationId"] = builder.Configuration["DISCORD_APPLICATION_ID"],
     ["Discord:AllowedGuildIds"] = builder.Configuration["DISCORD_ALLOWED_GUILD_IDS"],
     ["Discord:Enabled"] = builder.Configuration["DISCORD_ENABLED"],
