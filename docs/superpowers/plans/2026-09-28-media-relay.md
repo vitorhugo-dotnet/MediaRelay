@@ -16,7 +16,7 @@
 - Discord.Net: 3.20.1 with Discord.Net.Interactions and Discord.Net.WebSocket.
 - Supported media: `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.mp4` with their exact allowed MIME pair from spec section 17.
 - Maximum upload size defaults to `536870912` bytes (512 MiB); session TTL defaults to 30 minutes; presigned upload TTL defaults to 15 minutes.
-- Bucket defaults to `media`; canonical media host is `media.hugodotnet.dev`; application host is `upload.hugodotnet.dev`.
+- Bucket defaults to `media`; canonical media host is `s3.hugojava.dev`; application host is `upload.hugodotnet.dev`.
 - Browser media bytes go directly to MinIO; ShareX media bytes stream through the API.
 - No database, Redis, queue, frontend framework/build, transcoding, or multi-cloud abstraction.
 - Session tokens, Discord token, MinIO credentials, ShareX key, and presigned URL query credentials must not be logged, committed, returned to unauthorized clients, or included in images.

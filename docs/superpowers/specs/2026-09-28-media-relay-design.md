@@ -18,8 +18,8 @@ Build a small self-hosted media sharing service that combines:
 The primary result of every successful upload is a short, publicly accessible media URL such as:
 
 ```text
-https://media.hugodotnet.dev/x7Fk2.png
-https://media.hugodotnet.dev/a91Kd3.mp4
+https://s3.hugojava.dev/x7Fk2.png
+https://s3.hugojava.dev/a91Kd3.mp4
 ```
 
 When a Discord upload finishes, the bot must automatically publish that URL into the Discord channel where `/upload` was invoked.
@@ -38,7 +38,7 @@ The MVP is successful when all of the following work:
 4. The button opens a browser upload page.
 5. The user uploads a supported image or MP4.
 6. The file is stored in MinIO.
-7. The file becomes publicly accessible through `media.hugodotnet.dev`.
+7. The file becomes publicly accessible through `s3.hugojava.dev`.
 8. The bot posts the resulting public URL into the original Discord channel.
 9. Discord renders supported media inline when possible.
 10. ShareX can upload independently through the API and receive the same kind of public URL.
@@ -75,7 +75,7 @@ No React, Angular, Vue or frontend build pipeline is required.
 - MinIO
 - Reverse proxy
 - HTTPS
-- Public media domain: `media.hugodotnet.dev`
+- Public media domain: `s3.hugojava.dev`
 - Public MinIO upload endpoint, if required for presigned uploads
 
 ---
@@ -106,7 +106,7 @@ No React, Angular, Vue or frontend build pipeline is required.
                       └───────┬───────┘
                               │
                               ▼
-                 media.hugodotnet.dev
+                 s3.hugojava.dev
 ```
 
 The application is deployed as **one .NET process/container**.
@@ -143,7 +143,7 @@ After upload:
 ```text
 Browser / Discord
         ↓
-media.hugodotnet.dev
+s3.hugojava.dev
         ↓
 MinIO
 ```
@@ -531,7 +531,7 @@ DiscordChannelId
 and publishes:
 
 ```text
-https://media.hugodotnet.dev/x7Fk2.mp4
+https://s3.hugojava.dev/x7Fk2.mp4
 ```
 
 using the connected Discord bot.
@@ -598,7 +598,7 @@ Success response:
 
 ```json
 {
-  "url": "https://media.hugodotnet.dev/x7Fk2.png"
+  "url": "https://s3.hugojava.dev/x7Fk2.png"
 }
 ```
 
@@ -648,14 +648,14 @@ Prefer 96 bits or more.
 Canonical public URL format:
 
 ```text
-https://media.hugodotnet.dev/{objectId}
+https://s3.hugojava.dev/{objectId}
 ```
 
 Examples:
 
 ```text
-https://media.hugodotnet.dev/x7Fk2.png
-https://media.hugodotnet.dev/Kp39Za.mp4
+https://s3.hugojava.dev/x7Fk2.png
+https://s3.hugojava.dev/Kp39Za.mp4
 ```
 
 URLs must:
@@ -688,7 +688,7 @@ media/x7Fk2.mp4
 The public reverse proxy maps this internally to:
 
 ```text
-https://media.hugodotnet.dev/x7Fk2.mp4
+https://s3.hugojava.dev/x7Fk2.mp4
 ```
 
 Bucket policy permits anonymous read access to objects.
@@ -1194,7 +1194,7 @@ Recommended separation:
 upload.hugodotnet.dev
     → ASP.NET Core
 
-media.hugodotnet.dev
+s3.hugojava.dev
     → read-only MinIO media access
 
 storage.hugodotnet.dev
@@ -1206,7 +1206,7 @@ storage.hugodotnet.dev
 The canonical media URL remains:
 
 ```text
-media.hugodotnet.dev
+s3.hugojava.dev
 ```
 
 regardless of the storage upload hostname.
@@ -1242,7 +1242,7 @@ The MVP first attempts to use direct media URLs.
 Example:
 
 ```text
-https://media.hugodotnet.dev/x7Fk2.mp4
+https://s3.hugojava.dev/x7Fk2.mp4
 ```
 
 Do not build Open Graph wrapper pages unless direct Discord rendering proves insufficient.
@@ -1354,7 +1354,7 @@ POST /api/uploads/complete
 backend verifies MinIO object
         ↓
 Discord.Net posts:
-https://media.hugodotnet.dev/x7Fk2.mp4
+https://s3.hugojava.dev/x7Fk2.mp4
         ↓
 session completed
 ```
@@ -1372,7 +1372,7 @@ media validation
         ↓
 stream to MinIO
         ↓
-https://media.hugodotnet.dev/k91Ps.png
+https://s3.hugojava.dev/k91Ps.png
         ↓
 ShareX copies URL
 ```
@@ -1518,7 +1518,7 @@ The MVP contains exactly three externally meaningful capabilities:
 ```text
 1. Discord /upload → browser → MinIO → Discord URL
 2. ShareX → API → MinIO → returned URL
-3. Public media hosting through media.hugodotnet.dev
+3. Public media hosting through s3.hugojava.dev
 ```
 
 Everything else exists only to support those flows.

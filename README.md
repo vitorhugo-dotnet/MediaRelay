@@ -18,7 +18,7 @@ The `.env.example` sets `COMPOSE_FILE=deploy/docker-compose.prod.yml`, so plain 
 
 The local app health endpoint is `http://localhost:8080/health`; the local MinIO S3 API is on `http://localhost:9000`. The MinIO console is not published to the host. Stop the local stack with `docker compose -f docker-compose.yml down`. The named `minio-data` volume remains when containers are recreated; `down -v` deletes it.
 
-The compose stack binds the app and MinIO API to loopback. A reverse proxy on the VPS should route the public app host to `127.0.0.1:8080` and the media host to `127.0.0.1:9000`, with HTTPS enabled. Configure the `PUBLIC_APP_BASE_URL` and `PUBLIC_MEDIA_BASE_URL` values to those HTTPS origins. Set `MINIO_PUBLIC_ENDPOINT` to the public S3 hostname (without a scheme); it is used to construct browser presigned upload requests. `MINIO_USE_SSL` controls the app-to-MinIO internal connection, while `MINIO_PUBLIC_USE_SSL` controls the browser-facing MinIO endpoint used to sign those requests. Local HTTP endpoints should set both values to `false`; production can keep the internal value `false` while setting the public value to `true`. `PUBLIC_MEDIA_BASE_URL` is separate: it is the URL returned for the final uploaded media.
+The compose stack binds the app and MinIO API to loopback. A reverse proxy on the VPS should route the public app host to `127.0.0.1:8080` and `s3.hugojava.dev` to the MinIO S3 API at `127.0.0.1:9000`, with HTTPS enabled and the request host and path preserved. Set `MINIO_PUBLIC_ENDPOINT=s3.hugojava.dev` (without a scheme) and `PUBLIC_MEDIA_BASE_URL=https://s3.hugojava.dev`. The former is used to create the presigned URL that the browser uploads to directly; the latter is the base URL returned for the completed media. Both public settings must reach the same MinIO S3 API. Changing only `PUBLIC_MEDIA_BASE_URL` changes the final links but does not fix browser upload connectivity. If the uploader reports that it could not reach media storage, check that the browser can reach the HTTPS `s3.hugojava.dev` host and that its proxy route reaches MinIO on port `9000`. `MINIO_USE_SSL` controls the app-to-MinIO internal connection, while `MINIO_PUBLIC_USE_SSL` controls the browser-facing MinIO endpoint used to sign those requests. Local HTTP endpoints should set both values to `false`; production can keep the internal value `false` while setting the public value to `true`.
 
 ## Configuration
 
@@ -36,7 +36,7 @@ Import [`sharex/MediaRelay.sxcu`](sharex/MediaRelay.sxcu) into ShareX, then ente
 
 ## Production deployment
 
-Create DNS records for the app and media hosts and configure the VPS reverse proxy as described above. Keep the MinIO console private. The proxy must preserve the URL path and forward requests to the corresponding app or existing MinIO endpoint. Allow uploads up to `MAX_UPLOAD_SIZE` in any proxy body-size limit.
+Create DNS records for the app host and `s3.hugojava.dev`, and configure the VPS reverse proxy as described above. Keep the MinIO console private. The proxy must preserve the URL path and forward requests to the corresponding app or existing MinIO endpoint. Allow uploads up to `MAX_UPLOAD_SIZE` in any proxy body-size limit.
 
 The deployment workflow uses the protected GitHub Actions environment named `production`. Configure these repository or environment secrets and variables for SSH delivery:
 
