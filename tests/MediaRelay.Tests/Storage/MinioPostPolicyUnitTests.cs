@@ -26,7 +26,7 @@ public sealed class MinioPostPolicyUnitTests
         var upload = await storage.CreateBrowserUploadAsync("opaque-id.png", "image/png", 1024, TimeSpan.FromMinutes(3), CancellationToken.None);
         using var policy = JsonDocument.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(upload.Fields["policy"])));
         Assert.StartsWith("https://s3.example.test/", upload.Url, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotStartWith("http://s3.example.test/", upload.Url, StringComparison.OrdinalIgnoreCase);
+        Assert.False(upload.Url.StartsWith("http://s3.example.test/", StringComparison.OrdinalIgnoreCase));
         var conditions = policy.RootElement.GetProperty("conditions");
 
         Assert.Equal("test-media", conditions.EnumerateArray().First(condition => condition.ValueKind == JsonValueKind.Array && condition[0].GetString() == "eq" && condition[1].GetString() == "$bucket")[2].GetString());
